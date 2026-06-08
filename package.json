@@ -1,0 +1,57 @@
+{
+  "name": "web-xlsx",
+  "version": "0.0.0",
+  "description": "依存ゼロ・型安全な Excel(xlsx) 読み取りライブラリ（ブラウザ向け）",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "prepare": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
+    "build:min": "esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outfile=dist/index.min.js",
+    "size": "pnpm build:min && printf 'min: %s B / gzip: %s B\\n' $(wc -c < dist/index.min.js) $(gzip -c dist/index.min.js | wc -c)",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "check": "biome check --write ."
+  },
+  "keywords": [
+    "xlsx",
+    "excel",
+    "parser",
+    "reader",
+    "browser",
+    "typescript",
+    "zero-dependency",
+    "bulk-insert"
+  ],
+  "author": "naka93-gh",
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
+    "@types/node": "^25.8.0",
+    "@vitest/coverage-v8": "4.1.6",
+    "esbuild": "^0.28.0",
+    "happy-dom": "^20.9.0",
+    "typescript": "^6.0.3",
+    "vitest": "4.1.6"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=22"
+  }
+}
