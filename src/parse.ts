@@ -13,14 +13,18 @@ import type {
  * セルはネイティブ型（`string` / `number` / `boolean` / `Date`）のまま返す
  * 失敗は例外でなく {@link ParseResult} で返す（file 単位の失敗と行単位のエラーを分離）
  *
+ * 解凍に `DecompressionStream` を使うため非同期で返す
+ *
  * @example
  * ```ts
- * const result = parse(bytes)
+ * const result = await parse(bytes)
  * if (result.ok) console.log(result.data)
  * ```
  */
-export function parse(data: ArrayBuffer | Uint8Array, options?: ParseOptions): ParseResult<Row>
-
+export function parse(
+  data: ArrayBuffer | Uint8Array,
+  options?: ParseOptions,
+): Promise<ParseResult<Row>>
 /**
  * スキーマを渡すと各列を検証・型付けし、行を {@link InferRow} 型で返す
  * 検証に失敗した行は `data` から除外され `errors` に記録される
@@ -30,14 +34,17 @@ export function parse(data: ArrayBuffer | Uint8Array, options?: ParseOptions): P
  * const schema = {
  *   名前: { prop: 'name', type: 'string', required: true },
  * } satisfies Schema
- * const result = parse(bytes, { schema })
+ * const result = await parse(bytes, { schema })
  * ```
  */
 export function parse<S extends Schema>(
   data: ArrayBuffer | Uint8Array,
   options: ParseOptionsWithSchema<S>,
-): ParseResult<InferRow<S>>
-export function parse(_data: ArrayBuffer | Uint8Array, _options?: ParseOptions): ParseResult<Row> {
+): Promise<ParseResult<InferRow<S>>>
+export function parse(
+  _data: ArrayBuffer | Uint8Array,
+  _options?: ParseOptions,
+): Promise<ParseResult<Row>> {
   throw new Error('web-xlsx: parse() is not implemented yet')
 }
 

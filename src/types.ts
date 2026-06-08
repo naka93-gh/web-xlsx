@@ -77,7 +77,7 @@ export type RowError = {
  *
  * @example
  * ```ts
- * const result = parse(bytes, { schema })
+ * const result = await parse(bytes, { schema })
  * if (!result.ok) {
  *   console.error(result.error.message)
  * } else {
