@@ -37,7 +37,6 @@ type Entry = {
 /** 開いた ZIP アーカイブ */
 export interface ZipArchive {
   has(name: string): boolean
-  names(): string[]
   readBytes(name: string): Promise<Uint8Array>
   readText(name: string): Promise<string>
 }
@@ -179,7 +178,6 @@ export async function openZip(
 
   return {
     has: (name) => entries.has(name),
-    names: () => [...entries.keys()],
     readBytes,
     readText: async (name) => utf8.decode(await readBytes(name)),
   }

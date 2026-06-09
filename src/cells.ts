@@ -71,18 +71,6 @@ export function columnToIndex(letters: string): number {
   return n - 1
 }
 
-/** 0 始まりの列インデックスを列文字に変換する */
-export function colIndexToLetter(index: number): string {
-  let n = index + 1
-  let s = ''
-  while (n > 0) {
-    const rem = (n - 1) % 26
-    s = String.fromCharCode(65 + rem) + s
-    n = Math.floor((n - 1) / 26)
-  }
-  return s
-}
-
 /** セル参照 "B12" を列(0始まり)・行(1始まり)に分解する */
 export function parseRef(ref: string): { col: number; row: number } {
   const m = /^([A-Za-z]+)(\d+)$/.exec(ref)

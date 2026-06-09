@@ -93,7 +93,6 @@ describe('openZip', () => {
     )
     expect(zip.has('xl/worksheets/sheet1.xml')).toBe(true)
     expect(zip.has('nope')).toBe(false)
-    expect(zip.names()).toContain('[Content_Types].xml')
     expect(await zip.readText('xl/worksheets/sheet1.xml')).toBe('<sheet/>')
   })
 

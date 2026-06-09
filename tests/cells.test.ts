@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  colIndexToLetter,
-  columnToIndex,
-  parseRef,
-  type ResolveContext,
-  resolveCell,
-} from '../src/cells'
+import { columnToIndex, parseRef, type ResolveContext, resolveCell } from '../src/cells'
 import type { Styles } from '../src/styles'
 
 const dateStyles: Styles = { isDate: () => true }
@@ -77,12 +71,6 @@ describe('A1 参照ユーティリティ', () => {
     expect(columnToIndex('AA')).toBe(26)
     expect(columnToIndex('AB')).toBe(27)
     expect(columnToIndex('BA')).toBe(52)
-  })
-
-  it('colIndexToLetter は逆変換', () => {
-    for (const i of [0, 25, 26, 27, 52, 701, 702]) {
-      expect(columnToIndex(colIndexToLetter(i))).toBe(i)
-    }
   })
 
   it('parseRef', () => {
