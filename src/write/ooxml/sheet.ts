@@ -64,7 +64,7 @@ function rowXml(rowIndex: number, cells: Cell[], style: number): string {
 }
 
 /** sheet 生成オプション */
-export interface SheetOptions {
+export type SheetOptions = {
   /** ヘッダー太字・先頭行固定・列幅自動を付ける */
   style: boolean
 }

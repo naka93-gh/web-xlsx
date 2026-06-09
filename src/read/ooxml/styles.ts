@@ -3,7 +3,7 @@
 import { tokenize } from '../io/xml'
 
 /** 開いたスタイル表 */
-export interface Styles {
+export type Styles = {
   /** セルの s 属性（cellXfs のインデックス）が日付書式を指すか */
   isDate(styleIndex: number): boolean
 }

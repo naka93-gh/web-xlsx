@@ -7,7 +7,7 @@ import { stylesXml } from './ooxml/styles'
 import { contentTypesXml, rootRelsXml, workbookRelsXml, workbookXml } from './ooxml/workbook'
 
 /** 書き出しオプション */
-export interface BuildOptions {
+export type BuildOptions = {
   /** シート名（既定: "Sheet1"） */
   sheetName?: string
 

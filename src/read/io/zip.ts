@@ -29,7 +29,7 @@ const DEFAULT_MAX_ENTRY_BYTES = 300 * 1024 * 1024 // 単体エントリの解凍
 const DEFAULT_MAX_TOTAL_BYTES = 600 * 1024 * 1024 // アーカイブ全体の累積解凍サイズ上限
 
 /** 解凍サイズの上限設定 */
-export interface ZipLimits {
+export type ZipLimits = {
   /** 単体エントリの解凍サイズ上限（バイト） */
   maxEntryBytes?: number
   /** アーカイブ全体の累積解凍サイズ上限（バイト） */
@@ -45,7 +45,7 @@ type Entry = {
 }
 
 /** 開いた ZIP アーカイブ */
-export interface ZipArchive {
+export type ZipArchive = {
   has(name: string): boolean
   readBytes(name: string): Promise<Uint8Array>
   readText(name: string): Promise<string>
