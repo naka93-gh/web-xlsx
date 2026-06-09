@@ -60,7 +60,7 @@ export function applySchema(
       const resolved: Cell = cell ? cell.value : null
 
       if (resolved === null || resolved === '') {
-        if (column.defaultValue !== undefined) out[column.prop] = column.defaultValue as Cell
+        if (column.defaultValue !== undefined) out[column.prop] = column.defaultValue
         else if (column.required)
           rowErrors.push({ row: sr.rowNum, column: header, message: '必須です' })
         else out[column.prop] = null

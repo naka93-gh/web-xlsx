@@ -120,7 +120,7 @@ export type Column = {
   /**
    * 空セル時の補完値
    */
-  defaultValue?: unknown
+  defaultValue?: Cell
 
   /**
    * 追加検証（エラーメッセージ or null を返す）
