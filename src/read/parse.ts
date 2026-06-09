@@ -9,7 +9,7 @@ import type {
 } from '../core/types'
 import { openZip, ZipError } from './io/zip'
 import type { ResolveContext } from './ooxml/cells'
-import { RangeFormatError, readSheet, type SheetRow } from './ooxml/sheet'
+import { RangeFormatError, type ReadSheetResult, readSheet, type SheetRow } from './ooxml/sheet'
 import { parseSharedStrings } from './ooxml/strings'
 import { parseStyles, type Styles } from './ooxml/styles'
 import { openWorkbook, selectSheet } from './ooxml/workbook'
@@ -40,8 +40,6 @@ function toFileError(error: unknown): FileError {
   }
 }
 
-type SheetData = { headers: string[]; rows: SheetRow[] }
-
 /** ヘッダー配列の最初の重複名を返す（無ければ undefined） */
 function findDuplicateHeader(headers: string[]): string | undefined {
   const seen = new Set<string>()
@@ -56,7 +54,7 @@ function findDuplicateHeader(headers: string[]): string | undefined {
 async function readWorkbookSheet(
   data: ArrayBuffer | Uint8Array,
   options: ParseOptions,
-): Promise<{ ok: true; sheet: SheetData } | { ok: false; error: FileError }> {
+): Promise<{ ok: true; sheet: ReadSheetResult } | { ok: false; error: FileError }> {
   try {
     const zip = await openZip(data, options.limits)
     const workbook = await openWorkbook(zip)
