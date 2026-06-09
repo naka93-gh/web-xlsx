@@ -40,6 +40,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "CHANGELOG.md",
     "!dist/*.min.js",
     "!dist/**/*.map"
   ],
