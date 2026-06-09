@@ -58,7 +58,7 @@ async function readWorkbookSheet(
   options: ParseOptions,
 ): Promise<{ ok: true; sheet: SheetData } | { ok: false; error: FileError }> {
   try {
-    const zip = await openZip(data)
+    const zip = await openZip(data, options.limits)
     const workbook = await openWorkbook(zip)
     const sheetRef = selectSheet(workbook, options.sheet)
     // 指定シートが workbook に無い（ユーザー指定ミス等）→ sheet-not-found

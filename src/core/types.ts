@@ -179,6 +179,23 @@ export type InferRow<S extends Schema> = {
 }
 
 /**
+ * ZIP 解凍サイズの上限設定（ZIP 爆弾対策）
+ *
+ * 省略した項目は既定値（単体 300MB / 全体 600MB）が使われる
+ */
+export type ZipLimits = {
+  /**
+   * 単体エントリの解凍サイズ上限（バイト）
+   */
+  maxEntryBytes?: number
+
+  /**
+   * アーカイブ全体の累積解凍サイズ上限（バイト）
+   */
+  maxTotalBytes?: number
+}
+
+/**
  * パースの共通オプション
  */
 export type ParseOptions = {
@@ -204,6 +221,13 @@ export type ParseOptions = {
    * 空行をスキップ（既定: true）
    */
   skipEmptyRows?: boolean
+
+  /**
+   * ZIP 解凍サイズの上限（既定: 単体 300MB / 全体 600MB）
+   *
+   * 巨大ファイルを正規に扱う場合に緩める、より厳しく絞る、いずれにも使える
+   */
+  limits?: ZipLimits
 }
 
 /**

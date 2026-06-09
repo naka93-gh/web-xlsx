@@ -101,6 +101,13 @@ describe('parse（低レベル E2E）', () => {
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('invalid-xlsx')
   })
+
+  it('limits オプションが openZip に渡り上限超過で too-large', async () => {
+    // 既定上限なら通る正規 xlsx を、極小上限で弾けることで橋渡しを確認する
+    const result = await parse(await xlsx(), { limits: { maxTotalBytes: 1 } })
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe('too-large')
+  })
 })
 
 describe('parseFile', () => {

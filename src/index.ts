@@ -10,5 +10,6 @@ export type {
   Row,
   RowError,
   Schema,
+  ZipLimits,
 } from './core/types'
 export { parse, parseFile } from './read/parse'

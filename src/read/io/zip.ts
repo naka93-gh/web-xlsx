@@ -1,5 +1,7 @@
 // ZIP コンテナの読み取り（必要パーツだけ DecompressionStream で遅延展開）
 
+import type { ZipLimits } from '../../core/types'
+
 const SIG_EOCD = 0x06054b50 // End Of Central Directory
 const SIG_CDH = 0x02014b50 // Central Directory Header
 const SIG_LFH = 0x04034b50 // Local File Header
@@ -27,14 +29,6 @@ export class ZipError extends Error {
 // ZIP 爆弾対策の既定上限（数 KB が GB に膨らむ展開で OOM するのを防ぐ）
 const DEFAULT_MAX_ENTRY_BYTES = 300 * 1024 * 1024 // 単体エントリの解凍サイズ上限
 const DEFAULT_MAX_TOTAL_BYTES = 600 * 1024 * 1024 // アーカイブ全体の累積解凍サイズ上限
-
-/** 解凍サイズの上限設定 */
-export type ZipLimits = {
-  /** 単体エントリの解凍サイズ上限（バイト） */
-  maxEntryBytes?: number
-  /** アーカイブ全体の累積解凍サイズ上限（バイト） */
-  maxTotalBytes?: number
-}
 
 /** central directory の 1 エントリ */
 type Entry = {
