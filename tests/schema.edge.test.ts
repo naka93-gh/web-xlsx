@@ -39,6 +39,30 @@ describe('applySchema 型強制の分岐', () => {
     expect(first(s, { d: 123 }).errors[0]?.message).toBe('日付ではありません')
   })
 
+  it('date: 日付のみ ISO は TZ に依らずローカル 0:00（暦日がずれない）', () => {
+    const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
+    const d = first(s, { d: '2020-01-01' }).value?.d as Date
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([2020, 0, 1])
+    expect([d.getHours(), d.getMinutes(), d.getSeconds()]).toEqual([0, 0, 0])
+  })
+
+  it('date: ISO 日時はそのまま受理する', () => {
+    const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
+    expect((first(s, { d: '2020-01-01T09:30:00' }).value?.d as Date).getHours()).toBe(9)
+    expect(first(s, { d: '2020-01-01T00:00:00Z' }).value?.d).toBeInstanceOf(Date)
+  })
+
+  it('date: ISO 以外の形式・不正な暦日はエラー', () => {
+    const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
+    // 実装依存だったスラッシュ区切り・米国式・月名は受理しない
+    expect(first(s, { d: '2020/01/01' }).errors[0]?.message).toBe('日付ではありません')
+    expect(first(s, { d: '01/15/2020' }).errors[0]?.message).toBe('日付ではありません')
+    expect(first(s, { d: 'Jan 15 2020' }).errors[0]?.message).toBe('日付ではありません')
+    // 存在しない暦日
+    expect(first(s, { d: '2020-02-30' }).errors[0]?.message).toBe('日付ではありません')
+    expect(first(s, { d: '2020-13-01' }).errors[0]?.message).toBe('日付ではありません')
+  })
+
   it('空セルで required でも default でもなければ null', () => {
     const s = { x: { prop: 'x', type: 'string' } } satisfies Schema
     expect(first(s, { x: null }).value?.x).toBeNull()
