@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { serialToDate } from '../src/ooxml/serial'
+import { serialToDate } from '../../src/ooxml/serial'
 
 describe('serialToDate（1900 日付システム）', () => {
   it('Unix エポック: 25569 → 1970-01-01', () => {
