@@ -8,3 +8,4 @@ coverage/
 
 # demo bundle (generated)
 examples/web-xlsx.js
+examples/web-xlsx.write.js
