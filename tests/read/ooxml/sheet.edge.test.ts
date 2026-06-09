@@ -23,6 +23,17 @@ describe('readSheet エッジ', () => {
     expect(rows[0]?.cells.B?.value).toBe(2)
   })
 
+  it('壊れた r 属性のセルは列 0 に衝突させず出現順に割り当て', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>A</t></is></c><c r="??" t="inlineStr"><is><t>B</t></is></c></row>' +
+        '<row r="2"><c r="A2"><v>1</v></c><c r="??"><v>2</v></c></row>',
+    )
+    const { headers, rows } = readSheet(xml, ctx())
+    expect(headers).toEqual(['A', 'B'])
+    expect(rows[0]?.cells.A?.value).toBe(1)
+    expect(rows[0]?.cells.B?.value).toBe(2)
+  })
+
   it('inline 文字列のふりがな <rPh> を除外', () => {
     const xml = sheet(
       '<row r="1"><c t="inlineStr"><is><t>見出し</t></is></c></row>' +

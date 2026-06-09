@@ -49,7 +49,15 @@ describe('resolveCell エッジ', () => {
 })
 
 describe('parseRef エッジ', () => {
-  it('不正な参照は {0,0}', () => {
-    expect(parseRef('???')).toEqual({ col: 0, row: 0 })
+  it('不正な参照は null', () => {
+    expect(parseRef('???')).toBeNull()
+    expect(parseRef('')).toBeNull()
+    expect(parseRef('A')).toBeNull()
+    expect(parseRef('1')).toBeNull()
+  })
+
+  it('正常な参照は列(0始まり)・行(1始まり)に分解する', () => {
+    expect(parseRef('A1')).toEqual({ col: 0, row: 1 })
+    expect(parseRef('B12')).toEqual({ col: 1, row: 12 })
   })
 })

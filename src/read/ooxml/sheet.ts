@@ -47,7 +47,8 @@ function collectRows(xml: string): PresentRow[] {
         nextCol = 0
       } else if (token.name === 'c') {
         const ref = token.attrs.r ?? ''
-        const col = ref ? parseRef(ref).col : nextCol
+        // 参照が解析できない（属性欠落 or 壊れた r）場合は出現順にフォールバック
+        const col = parseRef(ref)?.col ?? nextCol
         nextCol = col + 1
         cellCol = col
         const raw: RawCell = { ref }
@@ -109,7 +110,7 @@ function parseRange(
   if (!a) return undefined
   const start = parseRef(a)
   const end = b ? parseRef(b) : start
-  if (start.row === 0 || end.row === 0) return undefined
+  if (!start || !end) return undefined
   return {
     minCol: Math.min(start.col, end.col),
     maxCol: Math.max(start.col, end.col),

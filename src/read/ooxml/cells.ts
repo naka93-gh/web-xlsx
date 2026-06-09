@@ -63,9 +63,9 @@ export function resolveCell(cell: RawCell, ctx: ResolveContext): Cell {
   }
 }
 
-/** セル参照 "B12" を列(0始まり)・行(1始まり)に分解する */
-export function parseRef(ref: string): { col: number; row: number } {
+/** セル参照 "B12" を列(0始まり)・行(1始まり)に分解する。解析できなければ null */
+export function parseRef(ref: string): { col: number; row: number } | null {
   const m = /^([A-Za-z]+)(\d+)$/.exec(ref)
-  if (!m) return { col: 0, row: 0 }
+  if (!m) return null
   return { col: columnToIndex(m[1] as string), row: Number.parseInt(m[2] as string, 10) }
 }
