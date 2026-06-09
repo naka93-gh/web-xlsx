@@ -55,6 +55,14 @@ describe('openZip エッジ', () => {
     await expect(openZip(eocd)).rejects.toThrow(/ZIP64/)
   })
 
+  it('エントリ単位の ZIP64 マーカー（localOffset=0xffffffff）は未対応で ZipError', async () => {
+    const zip = buildSingle('a.txt', 'x', 0)
+    // 中央ディレクトリヘッダ（localOffset は CDH 先頭 +42）を ZIP64 マーカーに差し替える
+    const cdStart = zip.length - 22 - (46 + enc.encode('a.txt').length)
+    new DataView(zip.buffer).setUint32(cdStart + 42, 0xffffffff, true)
+    await expect(openZip(zip)).rejects.toThrow(/ZIP64/)
+  })
+
   it('stored(0) は展開なしで読める', async () => {
     const zip = await openZip(buildSingle('a.txt', 'plain', 0))
     expect(await zip.readText('a.txt')).toBe('plain')

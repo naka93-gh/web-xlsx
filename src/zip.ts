@@ -135,6 +135,15 @@ export async function openZip(
     const extraLen = view.getUint16(p + 30, true)
     const commentLen = view.getUint16(p + 32, true)
     const localOffset = view.getUint32(p + 42, true)
+    // エントリ単位の ZIP64 マーカー（実値は extra に逃がされる）
+    // 未検出だと巨大オフセット/サイズで壊れた deflate を食って不明瞭失敗するため明示エラーに
+    if (
+      compressedSize === 0xffffffff ||
+      uncompressedSize === 0xffffffff ||
+      localOffset === 0xffffffff
+    ) {
+      throw new ZipError('invalid', 'ZIP64 は未対応です')
+    }
     const name = utf8.decode(bytes.subarray(p + 46, p + 46 + nameLen))
     entries.set(name, { method, compressedSize, uncompressedSize, localOffset })
     p += 46 + nameLen + extraLen + commentLen
