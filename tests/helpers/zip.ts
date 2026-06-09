@@ -8,7 +8,7 @@ async function deflateRaw(data: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
 }
 
 /** path→内容（XML 文字列）のマップから ZIP を構築する（CRC は 0） */
-export async function buildXlsx(files: Record<string, string>): Promise<Uint8Array> {
+export async function buildXlsx(files: Record<string, string>): Promise<Uint8Array<ArrayBuffer>> {
   const locals: Uint8Array[] = []
   const centrals: Uint8Array[] = []
   let offset = 0

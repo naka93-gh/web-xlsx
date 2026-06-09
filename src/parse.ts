@@ -1,4 +1,9 @@
+import type { ResolveContext } from './cells'
+import { readSheet, type SheetRow } from './sheet'
+import { parseSharedStrings } from './strings'
+import { parseStyles, type Styles } from './styles'
 import type {
+  FileError,
   InferRow,
   ParseOptions,
   ParseOptionsWithSchema,
@@ -6,6 +11,66 @@ import type {
   Row,
   Schema,
 } from './types'
+import { openWorkbook, selectSheet } from './workbook'
+import { openZip, ZipError } from './zip'
+
+const EMPTY_STYLES: Styles = { isDate: () => false }
+
+/** 例外を FileError に変換する */
+function toFileError(error: unknown): FileError {
+  if (error instanceof ZipError) {
+    const code = error.code === 'unsupported' ? 'unsupported-environment' : 'not-zip'
+    return { code, message: error.message }
+  }
+  return {
+    code: 'invalid-xlsx',
+    message: error instanceof Error ? error.message : '不正な xlsx です',
+  }
+}
+
+type SheetData = { headers: string[]; rows: SheetRow[] }
+
+/** zip → workbook → sheet までを通し、シート行を取り出す */
+async function readWorkbookSheet(
+  data: ArrayBuffer | Uint8Array,
+  options: ParseOptions,
+): Promise<{ ok: true; sheet: SheetData } | { ok: false; error: FileError }> {
+  try {
+    const zip = await openZip(data)
+    const workbook = await openWorkbook(zip)
+    const sheetRef = selectSheet(workbook, options.sheet)
+    if (!sheetRef || !zip.has(sheetRef.path)) {
+      return {
+        ok: false,
+        error: { code: 'sheet-not-found', message: '対象シートが見つかりません' },
+      }
+    }
+
+    const sharedStrings =
+      workbook.sharedStringsPath && zip.has(workbook.sharedStringsPath)
+        ? parseSharedStrings(await zip.readText(workbook.sharedStringsPath))
+        : []
+    const styles =
+      workbook.stylesPath && zip.has(workbook.stylesPath)
+        ? parseStyles(await zip.readText(workbook.stylesPath))
+        : EMPTY_STYLES
+
+    const ctx: ResolveContext = { sharedStrings, styles, date1904: workbook.date1904 }
+    const sheet = readSheet(await zip.readText(sheetRef.path), ctx, options)
+    return { ok: true, sheet }
+  } catch (error) {
+    return { ok: false, error: toFileError(error) }
+  }
+}
+
+/** SheetRow を低レベルの Row（値のみ）へ変換する */
+function toRow(row: SheetRow): Row {
+  const out: Row = {}
+  for (const key of Object.keys(row.cells)) {
+    out[key] = row.cells[key]?.value ?? null
+  }
+  return out
+}
 
 /**
  * xlsx のバイト列をパースして行の配列を返す
@@ -41,11 +106,19 @@ export function parse<S extends Schema>(
   data: ArrayBuffer | Uint8Array,
   options: ParseOptionsWithSchema<S>,
 ): Promise<ParseResult<InferRow<S>>>
-export function parse(
-  _data: ArrayBuffer | Uint8Array,
-  _options?: ParseOptions,
+export async function parse(
+  data: ArrayBuffer | Uint8Array,
+  options: ParseOptions & { schema?: Schema } = {},
 ): Promise<ParseResult<Row>> {
-  throw new Error('web-xlsx: parse() is not implemented yet')
+  const result = await readWorkbookSheet(data, options)
+  if (!result.ok) return result
+
+  if (options.schema) {
+    // TODO(layer 9): schema.ts で検証・型付けを実装して差し替える
+    throw new Error('web-xlsx: schema support is not implemented yet')
+  }
+
+  return { ok: true, data: result.sheet.rows.map(toRow), errors: [] }
 }
 
 /**
@@ -71,6 +144,15 @@ export function parseFile<S extends Schema>(
   file: File | Blob,
   options: ParseOptionsWithSchema<S>,
 ): Promise<ParseResult<InferRow<S>>>
-export function parseFile(_file: File | Blob, _options?: ParseOptions): Promise<ParseResult<Row>> {
-  throw new Error('web-xlsx: parseFile() is not implemented yet')
+export async function parseFile(
+  file: File | Blob,
+  options: ParseOptions & { schema?: Schema } = {},
+): Promise<ParseResult<Row>> {
+  let buffer: ArrayBuffer
+  try {
+    buffer = await file.arrayBuffer()
+  } catch {
+    return { ok: false, error: { code: 'invalid-xlsx', message: 'ファイルを読み込めませんでした' } }
+  }
+  return parse(buffer, options)
 }
