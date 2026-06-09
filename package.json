@@ -1,16 +1,28 @@
 {
   "name": "web-xlsx",
   "version": "0.1.0",
-  "description": "依存ゼロ・型安全な Excel(xlsx) 読み取りライブラリ（ブラウザ向け）",
-  "type": "module",
+  "description": "依存ゼロ・型安全な Excel(xlsx) 読み書きライブラリ（ブラウザ向け）",
+  "keywords": [
+    "xlsx",
+    "excel",
+    "parser",
+    "reader",
+    "writer",
+    "browser",
+    "typescript",
+    "zero-dependency",
+    "bulk-insert"
+  ],
+  "license": "MIT",
+  "author": "naka93-gh",
+  "homepage": "https://naka93-gh.github.io/web-xlsx/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/naka93-gh/web-xlsx.git"
   },
-  "homepage": "https://naka93-gh.github.io/web-xlsx/",
   "bugs": "https://github.com/naka93-gh/web-xlsx/issues",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,15 +33,20 @@
       "import": "./dist/write.js"
     }
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "!dist/*.min.js",
     "!dist/**/*.map"
   ],
-  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "prepare": "tsc -p tsconfig.build.json",
     "build": "tsc -p tsconfig.build.json",
+    "prepare": "tsc -p tsconfig.build.json",
     "build:min": "esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outfile=dist/index.min.js",
     "size": "pnpm build:min && printf 'min: %s B / gzip: %s B\\n' $(wc -c < dist/index.min.js) $(gzip -c dist/index.min.js | wc -c)",
     "size:write": "esbuild src/write.ts --bundle --minify --format=esm --target=es2020 --outfile=dist/write.min.js && printf 'write min: %s B / gzip: %s B\\n' $(wc -c < dist/write.min.js) $(gzip -c dist/write.min.js | wc -c)",
@@ -41,18 +58,6 @@
     "lint": "biome lint .",
     "check": "biome check --write ."
   },
-  "keywords": [
-    "xlsx",
-    "excel",
-    "parser",
-    "reader",
-    "browser",
-    "typescript",
-    "zero-dependency",
-    "bulk-insert"
-  ],
-  "author": "naka93-gh",
-  "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
     "@types/node": "^25.8.0",
@@ -61,9 +66,5 @@
     "happy-dom": "^20.9.0",
     "typescript": "^6.0.3",
     "vitest": "4.1.6"
-  },
-  "packageManager": "pnpm@9.0.0",
-  "engines": {
-    "node": ">=22"
   }
 }
