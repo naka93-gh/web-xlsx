@@ -31,6 +31,17 @@ describe('applySchema 型強制の分岐', () => {
     expect(first(s, { n: 'x' }).errors[0]?.message).toBe('数値ではありません')
   })
 
+  it('number: 共有文字列セルは raw（index）でなく解決済みテキストを数値化する', () => {
+    // t="s" のセルは raw.value が共有文字列の index 文字列。実値 "12345" が index 3 にある状況を模す
+    const s = { n: { prop: 'n', type: 'number' } } satisfies Schema
+    const sheetRow: SheetRow = {
+      rowNum: 2,
+      cells: { n: { value: '12345', raw: '3' } },
+    }
+    const { data } = applySchema([sheetRow], s)
+    expect(data[0]?.n).toBe(12345)
+  })
+
   it('date: Date はそのまま / ISO 文字列は変換 / 不正文字列・非日付はエラー', () => {
     const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
     expect(first(s, { d: new Date(2020, 0, 1) }).value?.d).toBeInstanceOf(Date)

@@ -16,7 +16,8 @@ function coerce(
       return { value: typeof resolved === 'number' && raw !== undefined ? raw : String(resolved) }
     case 'number': {
       if (typeof resolved === 'number') return { value: resolved }
-      const n = Number(raw ?? resolved)
+      // resolved は文字列セルの実テキスト。raw は t="s" だと共有文字列の index なので使わない
+      const n = Number(resolved)
       return Number.isFinite(n) ? { value: n } : { error: '数値ではありません' }
     }
     case 'boolean': {
