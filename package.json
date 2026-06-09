@@ -1,19 +1,30 @@
 {
   "name": "web-xlsx",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "依存ゼロ・型安全な Excel(xlsx) 読み取りライブラリ（ブラウザ向け）",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/naka93-gh/web-xlsx.git"
+  },
+  "homepage": "https://naka93-gh.github.io/web-xlsx/",
+  "bugs": "https://github.com/naka93-gh/web-xlsx/issues",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./write": {
+      "types": "./dist/write.d.ts",
+      "import": "./dist/write.js"
     }
   },
   "files": [
     "dist",
-    "README.md"
+    "!dist/*.min.js",
+    "!dist/**/*.map"
   ],
   "sideEffects": false,
   "scripts": {
@@ -21,6 +32,7 @@
     "build": "tsc -p tsconfig.build.json",
     "build:min": "esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outfile=dist/index.min.js",
     "size": "pnpm build:min && printf 'min: %s B / gzip: %s B\\n' $(wc -c < dist/index.min.js) $(gzip -c dist/index.min.js | wc -c)",
+    "size:write": "esbuild src/write.ts --bundle --minify --format=esm --target=es2020 --outfile=dist/write.min.js && printf 'write min: %s B / gzip: %s B\\n' $(wc -c < dist/write.min.js) $(gzip -c dist/write.min.js | wc -c)",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
