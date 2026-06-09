@@ -1,6 +1,7 @@
 // セル値の解決（raw セル → Cell）と A1 参照ユーティリティ
 
 import { columnToIndex } from '../../core/a1'
+import { parseIsoDate } from '../../core/date'
 import { serialToDate } from '../../core/serial'
 import type { Cell } from '../../core/types'
 import type { Styles } from './styles'
@@ -47,8 +48,8 @@ export function resolveCell(cell: RawCell, ctx: ResolveContext): Cell {
     case 'e':
       return null
     case 'd':
-      // strict OOXML の ISO 日付文字列
-      return cell.value ? new Date(cell.value) : null
+      // strict OOXML の ISO 日付文字列。不正形式は null
+      return cell.value ? parseIsoDate(cell.value) : null
     default: {
       // 数値（t='n' または無印）
       if (cell.value === undefined || cell.value === '') return null
