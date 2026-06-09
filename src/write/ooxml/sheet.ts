@@ -41,6 +41,7 @@ function cellXml(ref: string, value: Cell, style: number): string {
   const s = style > 0 ? ` s="${style}"` : ''
   if (value === null || value === '') return `<c r="${ref}"${s}/>`
   if (value instanceof Date) {
+    // Date はシリアル値なので表示書式が必須。渡された style より DATE_STYLE を優先する
     return `<c r="${ref}" s="${DATE_STYLE}"><v>${dateToSerial(value)}</v></c>`
   }
   if (typeof value === 'number') {
