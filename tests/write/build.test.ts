@@ -81,4 +81,17 @@ describe('build オプション', () => {
     if (!result.ok) return
     expect(result.data[0]?.s).toBe('  spaced  ')
   })
+
+  it('Cell 外の値（bigint・オブジェクト）は String 化され crash しない', async () => {
+    // 型上は Cell だが、untyped な JS 呼び出しで Cell 外が混じっても落ちないこと
+    const rows = [{ id: 90071992547409921n, meta: { a: 1 } }] as unknown as Parameters<
+      typeof build
+    >[0]
+    const bytes = await build(rows)
+    const result = await parse(bytes)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.data[0]?.id).toBe('90071992547409921')
+    expect(result.data[0]?.meta).toBe('[object Object]')
+  })
 })

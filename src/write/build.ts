@@ -19,10 +19,19 @@ export interface BuildOptions {
   style?: boolean
 }
 
-/** unknown 値を Cell に寄せる（undefined→null、その他はそのまま信頼） */
+/** unknown 値を Cell に寄せる（Cell 外の型は String 化、未入力は null） */
 function toCell(value: unknown): Cell {
   if (value === undefined || value === null) return null
-  return value as Cell
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    value instanceof Date
+  ) {
+    return value
+  }
+  // object / array / bigint / symbol 等は String 化して文字列セルにする（cellXml の crash 回避）
+  return String(value)
 }
 
 /** スキーマ無し: 全行のキーを出現順に集めてヘッダーとし、セル行列を作る */
