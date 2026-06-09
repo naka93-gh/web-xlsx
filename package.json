@@ -1,17 +1,20 @@
 {
   "name": "web-xlsx",
   "version": "0.1.0",
-  "description": "依存ゼロ・型安全な Excel(xlsx) 読み書きライブラリ（ブラウザ向け）",
+  "description": "Read and write Excel (.xlsx) files in the browser or Node.js. Zero dependencies.",
   "keywords": [
     "xlsx",
     "excel",
+    "spreadsheet",
     "parser",
     "reader",
     "writer",
     "browser",
+    "nodejs",
     "typescript",
     "zero-dependency",
-    "bulk-insert"
+    "import",
+    "export"
   ],
   "license": "MIT",
   "author": "naka93-gh",
