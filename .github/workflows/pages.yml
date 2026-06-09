@@ -30,7 +30,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # src を1ファイルにバンドルして examples に出力（examples ディレクトリをそのまま公開）
+      # 読み（web-xlsx）と書き（web-xlsx/write）はサブパス分割に合わせて別バンドルにする
       - run: pnpm exec esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outfile=examples/web-xlsx.js
+      - run: pnpm exec esbuild src/write.ts --bundle --minify --format=esm --target=es2020 --outfile=examples/web-xlsx.write.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: examples

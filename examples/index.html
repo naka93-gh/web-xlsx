@@ -14,24 +14,48 @@
       td.num { text-align: right; font-variant-numeric: tabular-nums; }
       .err { color: #c00; }
       .meta { color: #666; margin-top: 0.5rem; }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+      button { font: inherit; padding: 0.4rem 0.8rem; border: 1px solid #bbb; border-radius: 6px; background: #fafafa; cursor: pointer; }
+      button:hover:not(:disabled) { background: #f0f0f0; }
+      button:disabled { color: #aaa; cursor: default; }
+      .group { margin: 1.5rem 0; }
+      .group h2 { font-size: 1rem; margin-bottom: 0.25rem; }
     </style>
   </head>
   <body>
-    <h1>web-xlsx デモ — Excel をアップすると中身を表示します</h1>
+    <h1>web-xlsx デモ — Excel の読み込みと書き出し</h1>
     <p class="meta">処理はすべてブラウザ内で完結します。ファイルはどこにもアップロードされません。</p>
-    <div id="drop">
-      <input type="file" id="file" accept=".xlsx" />
+
+    <div class="group">
+      <h2>① 読み込む</h2>
+      <div id="drop">
+        <input type="file" id="file" accept=".xlsx" />
+      </div>
+      <div id="out"></div>
     </div>
-    <div id="out"></div>
+
+    <div class="group">
+      <h2>② 書き出す（ダウンロード）</h2>
+      <p class="meta">行データから xlsx を生成してダウンロードします。</p>
+      <div class="actions">
+        <button id="dl-sample" type="button">サンプル xlsx をダウンロード</button>
+        <button id="dl-current" type="button" disabled>表示中のデータを書き出す</button>
+      </div>
+    </div>
     <footer class="meta">
-      <a href="https://github.com/naka93-gh/web-xlsx">naka93-gh/web-xlsx</a> · 依存ゼロ・型安全な xlsx リーダー
+      <a href="https://github.com/naka93-gh/web-xlsx">naka93-gh/web-xlsx</a> · 依存ゼロ・型安全な xlsx 読み書き
     </footer>
 
     <script type="module">
       import { parseFile } from './web-xlsx.js'
+      import { build } from './web-xlsx.write.js'
 
       const input = document.getElementById('file')
       const out = document.getElementById('out')
+      const dlSample = document.getElementById('dl-sample')
+      const dlCurrent = document.getElementById('dl-current')
+
+      let currentRows = null // 直近に読み込んだ行（往復書き出し用）
 
       const escape = (s) =>
         s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
@@ -65,6 +89,8 @@
         const file = e.target.files?.[0]
         if (!file) return
         out.innerHTML = '読み込み中…'
+        currentRows = null
+        dlCurrent.disabled = true
         try {
           const result = await parseFile(file)
           if (!result.ok) {
@@ -72,9 +98,39 @@
             return
           }
           render(result.data)
+          currentRows = result.data
+          dlCurrent.disabled = currentRows.length === 0
         } catch (err) {
           out.innerHTML = `<p class="err">例外: ${escape(String(err))}</p>`
         }
+      })
+
+      // 生成したバイト列をダウンロードさせる
+      const download = (bytes, filename) => {
+        const blob = new Blob([bytes], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+
+      dlSample.addEventListener('click', async () => {
+        // string / number / Date が混ざったサンプル。型はそのまま xlsx に反映される
+        const rows = [
+          { 名前: 'Alice', 年齢: 30, 入社日: new Date(2020, 0, 15) },
+          { 名前: 'Bob', 年齢: 25, 入社日: new Date(2021, 3, 1) },
+          { 名前: 'Carol', 年齢: 41, 入社日: new Date(2019, 10, 20) },
+        ]
+        download(await build(rows, { sheetName: 'メンバー' }), 'sample.xlsx')
+      })
+
+      dlCurrent.addEventListener('click', async () => {
+        if (!currentRows?.length) return
+        download(await build(currentRows), 'export.xlsx')
       })
     </script>
   </body>
