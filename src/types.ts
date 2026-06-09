@@ -22,6 +22,7 @@ export type FileErrorCode =
   | 'not-zip' // ZIP として読めない
   | 'invalid-xlsx' // 必要パーツ(workbook/sheet 等)が欠落
   | 'sheet-not-found' // 指定シートが無い
+  | 'duplicate-header' // ヘッダー列名が重複し列の対応が一意に決まらない
   | 'unsupported-environment' // DecompressionStream 非対応
   | 'too-large' // 解凍サイズが上限超過（ZIP 爆弾対策）
 

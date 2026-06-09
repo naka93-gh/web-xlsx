@@ -65,6 +65,25 @@ describe('parse（低レベル E2E）', () => {
     if (!result.ok) expect(result.error.code).toBe('invalid-xlsx')
   })
 
+  it('同名ヘッダー列がある場合は duplicate-header（後勝ち上書きで黙ってデータが消えるのを防ぐ）', async () => {
+    const bytes = await buildXlsx({
+      '_rels/.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+      'xl/workbook.xml': `<workbook><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+      'xl/_rels/workbook.xml.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+      // A1/B1 が同じ "名前"（Excel のコピペで起こりうる）
+      'xl/worksheets/sheet1.xml': `<worksheet><sheetData>
+        <row r="1"><c r="A1" t="inlineStr"><is><t>名前</t></is></c><c r="B1" t="inlineStr"><is><t>名前</t></is></c></row>
+        <row r="2"><c r="A2" t="inlineStr"><is><t>Alice</t></is></c><c r="B2" t="inlineStr"><is><t>Bob</t></is></c></row>
+      </sheetData></worksheet>`,
+    })
+    const result = await parse(bytes)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error.code).toBe('duplicate-header')
+      expect(result.error.message).toContain('名前')
+    }
+  })
+
   it('ZIP は開けるが中身破損（中央ディレクトリ不正）は invalid-xlsx', async () => {
     // EOCD は見つかるが cdOffset 先に CDH シグネチャが無い ZIP を組む
     const bytes = new Uint8Array(8 + 22) // [壊れた CD 領域][EOCD]

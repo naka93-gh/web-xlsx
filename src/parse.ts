@@ -38,6 +38,16 @@ function toFileError(error: unknown): FileError {
 
 type SheetData = { headers: string[]; rows: SheetRow[] }
 
+/** ヘッダー配列の最初の重複名を返す（無ければ undefined） */
+function findDuplicateHeader(headers: string[]): string | undefined {
+  const seen = new Set<string>()
+  for (const h of headers) {
+    if (seen.has(h)) return h
+    seen.add(h)
+  }
+  return undefined
+}
+
 /** zip → workbook → sheet までを通し、シート行を取り出す */
 async function readWorkbookSheet(
   data: ArrayBuffer | Uint8Array,
@@ -73,6 +83,14 @@ async function readWorkbookSheet(
 
     const ctx: ResolveContext = { sharedStrings, styles, date1904: workbook.date1904 }
     const sheet = readSheet(await zip.readText(sheetRef.path), ctx, options)
+    // 同名ヘッダーは Record キー衝突で前列が黙って消えるため、曖昧として明示拒否する
+    const duplicate = findDuplicateHeader(sheet.headers)
+    if (duplicate !== undefined) {
+      return {
+        ok: false,
+        error: { code: 'duplicate-header', message: `ヘッダー列が重複しています: "${duplicate}"` },
+      }
+    }
     return { ok: true, sheet }
   } catch (error) {
     return { ok: false, error: toFileError(error) }
