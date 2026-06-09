@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseStyles } from '../../src/ooxml/styles'
+import { parseStyles } from '../../../src/read/ooxml/styles'
 
 const styleSheet = (xfs: string, numFmts = '') =>
   `<styleSheet>${numFmts}<cellXfs>${xfs}</cellXfs></styleSheet>`

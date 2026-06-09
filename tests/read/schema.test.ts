@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { SheetRow } from '../src/ooxml/sheet'
-import { parse } from '../src/parse'
-import { applySchema } from '../src/schema'
-import type { Schema } from '../src/types'
-import { buildXlsx } from './helpers/zip'
+import type { Schema } from '../../src/core/types'
+import type { SheetRow } from '../../src/read/ooxml/sheet'
+import { parse } from '../../src/read/parse'
+import { applySchema } from '../../src/read/schema'
+import { buildXlsx } from '../helpers/zip'
 
 /** SheetRow を組み立てる小ヘルパ */
 const row = (

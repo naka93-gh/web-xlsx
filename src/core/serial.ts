@@ -35,3 +35,26 @@ export function serialToDate(serial: number, options?: { date1904?: boolean }): 
   const msOfDay = Math.round(frac * MS_PER_DAY)
   return new Date(localMidnight.getTime() + msOfDay)
 }
+
+/**
+ * `Date` を Excel のシリアル値に変換する（{@link serialToDate} の逆）
+ *
+ * ローカル（JST 前提）の壁時計として暦日・時刻を読み、整数部=日数・小数部=時刻に
+ * 戻す。暦日は UTC 換算で求めるため TZ に依らずその日のシリアルになる
+ *
+ * @param date 変換対象の `Date`
+ * @param options `date1904` を true にすると 1904 日付システムで計算する
+ */
+export function dateToSerial(date: Date, options?: { date1904?: boolean }): number {
+  const base = options?.date1904 ? EPOCH_1904_UTC : EPOCH_1900_UTC
+  // 壁時計の暦日を UTC に写して起点との日数差を取る（TZ の影響を受けない）
+  const utcDay = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+  const whole = Math.round((utcDay - base) / MS_PER_DAY)
+
+  const msOfDay =
+    date.getHours() * 3_600_000 +
+    date.getMinutes() * 60_000 +
+    date.getSeconds() * 1_000 +
+    date.getMilliseconds()
+  return whole + msOfDay / MS_PER_DAY
+}

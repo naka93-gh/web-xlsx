@@ -1,4 +1,3 @@
-export { parse, parseFile } from './parse'
 export type {
   Cell,
   Column,
@@ -11,4 +10,5 @@ export type {
   Row,
   RowError,
   Schema,
-} from './types'
+} from './core/types'
+export { parse, parseFile } from './read/parse'

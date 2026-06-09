@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { columnToIndex, parseRef, type ResolveContext, resolveCell } from '../../src/ooxml/cells'
-import type { Styles } from '../../src/ooxml/styles'
+import { columnToIndex } from '../../../src/core/a1'
+import { parseRef, type ResolveContext, resolveCell } from '../../../src/read/ooxml/cells'
+import type { Styles } from '../../../src/read/ooxml/styles'
 
 const dateStyles: Styles = { isDate: () => true }
 const numStyles: Styles = { isDate: () => false }

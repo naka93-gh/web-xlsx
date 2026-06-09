@@ -1,7 +1,7 @@
 // スキーマ検証・型付け（SheetRow[] → 型付き行 ＋ 行エラー）
 
+import type { Cell, ColumnType, RowError, Schema } from '../core/types'
 import type { SheetRow } from './ooxml/sheet'
-import type { Cell, ColumnType, RowError, Schema } from './types'
 
 /**
  * 文字列を ISO 8601 として厳密にパースする（不正・非対応形式は null）

@@ -1,7 +1,8 @@
 // セル値の解決（raw セル → Cell）と A1 参照ユーティリティ
 
-import type { Cell } from '../types'
-import { serialToDate } from './serial'
+import { columnToIndex } from '../../core/a1'
+import { serialToDate } from '../../core/serial'
+import type { Cell } from '../../core/types'
 import type { Styles } from './styles'
 
 /** シート XML から取り出した未解決のセル */
@@ -59,16 +60,6 @@ export function resolveCell(cell: RawCell, ctx: ResolveContext): Cell {
       return num
     }
   }
-}
-
-/** 列文字（"A" "AA"）を 0 始まりの列インデックスに変換する */
-export function columnToIndex(letters: string): number {
-  let n = 0
-  const upper = letters.toUpperCase()
-  for (let i = 0; i < upper.length; i++) {
-    n = n * 26 + (upper.charCodeAt(i) - 64)
-  }
-  return n - 1
 }
 
 /** セル参照 "B12" を列(0始まり)・行(1始まり)に分解する */

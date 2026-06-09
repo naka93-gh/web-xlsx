@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parse, parseFile } from '../src/parse'
-import { buildXlsx } from './helpers/zip'
+import { parse, parseFile } from '../../src/read/parse'
+import { buildXlsx } from '../helpers/zip'
 
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 

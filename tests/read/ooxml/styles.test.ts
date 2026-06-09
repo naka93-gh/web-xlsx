@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseStyles } from '../../src/ooxml/styles'
+import { parseStyles } from '../../../src/read/ooxml/styles'
 
 // 代表的な styles.xml: cellStyleXfs(無視されるべき) と cellXfs を持つ
 const XML = `<styleSheet>

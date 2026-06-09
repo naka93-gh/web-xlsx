@@ -1,7 +1,7 @@
 // ワークシート（xl/worksheets/sheetN.xml）の解析 — 行/セルを組み立てる
 
+import type { Cell, ParseOptions } from '../../core/types'
 import { tokenize } from '../io/xml'
-import type { Cell, ParseOptions } from '../types'
 import { parseRef, type RawCell, type ResolveContext, resolveCell } from './cells'
 
 /** 解決済みのセル（raw は精度対策で元の <v> テキストを保持） */
