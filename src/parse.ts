@@ -47,10 +47,18 @@ async function readWorkbookSheet(
     const zip = await openZip(data)
     const workbook = await openWorkbook(zip)
     const sheetRef = selectSheet(workbook, options.sheet)
-    if (!sheetRef || !zip.has(sheetRef.path)) {
+    // 指定シートが workbook に無い（ユーザー指定ミス等）→ sheet-not-found
+    if (!sheetRef) {
       return {
         ok: false,
         error: { code: 'sheet-not-found', message: '対象シートが見つかりません' },
+      }
+    }
+    // シートは宣言されているが本体 XML がアーカイブに無い → 必要パーツ欠落
+    if (!zip.has(sheetRef.path)) {
+      return {
+        ok: false,
+        error: { code: 'invalid-xlsx', message: `シート本体が見つかりません: ${sheetRef.path}` },
       }
     }
 

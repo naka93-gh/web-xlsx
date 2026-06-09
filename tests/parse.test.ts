@@ -53,6 +53,18 @@ describe('parse（低レベル E2E）', () => {
     if (!result.ok) expect(result.error.code).toBe('not-zip')
   })
 
+  it('シートは宣言されているが本体 XML が欠落は invalid-xlsx', async () => {
+    // worksheets/sheet1.xml を意図的に含めない（rels だけ参照が残る）
+    const bytes = await buildXlsx({
+      '_rels/.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+      'xl/workbook.xml': `<workbook><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+      'xl/_rels/workbook.xml.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+    })
+    const result = await parse(bytes)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe('invalid-xlsx')
+  })
+
   it('ZIP は開けるが中身破損（中央ディレクトリ不正）は invalid-xlsx', async () => {
     // EOCD は見つかるが cdOffset 先に CDH シグネチャが無い ZIP を組む
     const bytes = new Uint8Array(8 + 22) // [壊れた CD 領域][EOCD]
