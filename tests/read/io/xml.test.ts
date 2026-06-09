@@ -17,6 +17,17 @@ describe('decodeEntities', () => {
   it('未知の実体はそのまま残す', () => {
     expect(decodeEntities('&unknown;')).toBe('&unknown;')
   })
+
+  it('Unicode 範囲（0x10FFFF）の境界はデコードする', () => {
+    expect(decodeEntities('&#x10FFFF;')).toBe(String.fromCodePoint(0x10ffff))
+  })
+
+  it('範囲外コードポイントは例外を投げず元のまま残す', () => {
+    // fromCodePoint が RangeError を投げる値（0x110000 超）でクラッシュしない
+    expect(() => decodeEntities('&#x110000;')).not.toThrow()
+    expect(decodeEntities('&#x110000;')).toBe('&#x110000;')
+    expect(decodeEntities('&#1114112;')).toBe('&#1114112;')
+  })
 })
 
 describe('tokenize', () => {

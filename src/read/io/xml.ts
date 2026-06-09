@@ -29,7 +29,8 @@ export function decodeEntities(s: string): string {
     if (body[0] === '#') {
       const code =
         body[1] === 'x' ? Number.parseInt(body.slice(2), 16) : Number.parseInt(body.slice(1), 10)
-      return Number.isFinite(code) ? String.fromCodePoint(code) : whole
+      // Unicode 範囲外（0x10FFFF 超）は fromCodePoint が例外を投げるので元のまま温存
+      return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole
     }
     const mapped = NAMED_ENTITIES[body]
     return mapped !== undefined ? mapped : whole
