@@ -1,4 +1,5 @@
 import type { ResolveContext } from './cells'
+import { applySchema } from './schema'
 import { readSheet, type SheetRow } from './sheet'
 import { parseSharedStrings } from './strings'
 import { parseStyles, type Styles } from './styles'
@@ -114,8 +115,8 @@ export async function parse(
   if (!result.ok) return result
 
   if (options.schema) {
-    // TODO(layer 9): schema.ts で検証・型付けを実装して差し替える
-    throw new Error('web-xlsx: schema support is not implemented yet')
+    const { data, errors } = applySchema(result.sheet.rows, options.schema)
+    return { ok: true, data: data as Row[], errors }
   }
 
   return { ok: true, data: result.sheet.rows.map(toRow), errors: [] }
