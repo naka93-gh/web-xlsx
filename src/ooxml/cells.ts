@@ -1,8 +1,8 @@
 // セル値の解決（raw セル → Cell）と A1 参照ユーティリティ
 
+import type { Cell } from '../types'
 import { serialToDate } from './serial'
 import type { Styles } from './styles'
-import type { Cell } from './types'
 
 /** シート XML から取り出した未解決のセル */
 export type RawCell = {

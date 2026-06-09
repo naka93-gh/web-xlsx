@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseSharedStrings } from '../src/strings'
+import { parseSharedStrings } from '../src/ooxml/strings'
 
 const sst = (inner: string) => `<sst count="0" uniqueCount="0">${inner}</sst>`
 

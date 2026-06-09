@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import type { SheetRow } from '../src/ooxml/sheet'
 import { parse } from '../src/parse'
 import { applySchema } from '../src/schema'
-import type { SheetRow } from '../src/sheet'
 import type { Schema } from '../src/types'
 import { buildXlsx } from './helpers/zip'
 

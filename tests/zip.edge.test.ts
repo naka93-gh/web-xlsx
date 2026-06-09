@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { openZip, ZipError } from '../src/zip'
+import { openZip, ZipError } from '../src/io/zip'
 
 const enc = new TextEncoder()
 

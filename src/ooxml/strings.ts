@@ -1,6 +1,6 @@
 // 共有文字列テーブル（xl/sharedStrings.xml）の解析
 
-import { tokenize } from './xml'
+import { tokenize } from '../io/xml'
 
 /**
  * sharedStrings.xml を index → 文字列の配列に変換する

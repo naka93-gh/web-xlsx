@@ -1,8 +1,10 @@
-import type { ResolveContext } from './cells'
+import { openZip, ZipError } from './io/zip'
+import type { ResolveContext } from './ooxml/cells'
+import { readSheet, type SheetRow } from './ooxml/sheet'
+import { parseSharedStrings } from './ooxml/strings'
+import { parseStyles, type Styles } from './ooxml/styles'
+import { openWorkbook, selectSheet } from './ooxml/workbook'
 import { applySchema } from './schema'
-import { readSheet, type SheetRow } from './sheet'
-import { parseSharedStrings } from './strings'
-import { parseStyles, type Styles } from './styles'
 import type {
   FileError,
   InferRow,
@@ -12,8 +14,6 @@ import type {
   Row,
   Schema,
 } from './types'
-import { openWorkbook, selectSheet } from './workbook'
-import { openZip, ZipError } from './zip'
 
 const EMPTY_STYLES: Styles = { isDate: () => false }
 

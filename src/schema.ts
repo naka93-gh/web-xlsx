@@ -1,6 +1,6 @@
 // スキーマ検証・型付け（SheetRow[] → 型付き行 ＋ 行エラー）
 
-import type { SheetRow } from './sheet'
+import type { SheetRow } from './ooxml/sheet'
 import type { Cell, ColumnType, RowError, Schema } from './types'
 
 /**
