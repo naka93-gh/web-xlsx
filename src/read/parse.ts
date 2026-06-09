@@ -9,7 +9,7 @@ import type {
 } from '../core/types'
 import { openZip, ZipError } from './io/zip'
 import type { ResolveContext } from './ooxml/cells'
-import { readSheet, type SheetRow } from './ooxml/sheet'
+import { RangeFormatError, readSheet, type SheetRow } from './ooxml/sheet'
 import { parseSharedStrings } from './ooxml/strings'
 import { parseStyles, type Styles } from './ooxml/styles'
 import { openWorkbook, selectSheet } from './ooxml/workbook'
@@ -29,6 +29,10 @@ function toFileError(error: unknown): FileError {
             ? 'not-zip'
             : 'invalid-xlsx' // ZIP は開けたが中身が壊れている/未対応
     return { code, message: error.message }
+  }
+  // range オプションの形式不正はファイル破損と区別する
+  if (error instanceof RangeFormatError) {
+    return { code: 'invalid-range', message: error.message }
   }
   return {
     code: 'invalid-xlsx',

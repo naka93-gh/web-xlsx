@@ -22,6 +22,7 @@ export type FileErrorCode =
   | 'not-zip' // ZIP として読めない
   | 'invalid-xlsx' // 必要パーツ(workbook/sheet 等)が欠落
   | 'sheet-not-found' // 指定シートが無い
+  | 'invalid-range' // range オプションの形式が不正
   | 'duplicate-header' // ヘッダー列名が重複し列の対応が一意に決まらない
   | 'unsupported-environment' // DecompressionStream 非対応
   | 'too-large' // 解凍サイズが上限超過（ZIP 爆弾対策）
@@ -192,7 +193,10 @@ export type ParseOptions = {
   headerRow?: number
 
   /**
-   * データ範囲 "A1:D100"（既定: 自動）
+   * データ範囲（既定: 自動）
+   *
+   * "A1:D100"（矩形）/ "A:D"（列のみ・全行）/ "2:100"（行のみ・全列）に対応する
+   * 形式が不正なら `ok:false` の `invalid-range` を返す
    */
   range?: string
 

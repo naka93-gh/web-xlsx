@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ResolveContext } from '../../../src/read/ooxml/cells'
-import { readSheet } from '../../../src/read/ooxml/sheet'
+import { RangeFormatError, readSheet } from '../../../src/read/ooxml/sheet'
 import type { Styles } from '../../../src/read/ooxml/styles'
 
 const ctx = (sharedStrings: string[] = []): ResolveContext => ({
@@ -59,11 +59,32 @@ describe('readSheet エッジ', () => {
     expect(readSheet(xml, ctx(), { headerRow: 99 }).headers).toEqual([])
   })
 
-  it('列のみ/不正な range は無視される', () => {
+  it('列のみ range "B:C" は全行・指定列に限定する', () => {
     const xml = sheet(
-      '<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>' +
-        '<row r="2"><c r="A2"><v>1</v></c></row>',
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>名前</t></is></c><c r="B1" t="inlineStr"><is><t>年齢</t></is></c><c r="C1" t="inlineStr"><is><t>備考</t></is></c></row>' +
+        '<row r="2"><c r="A2" t="inlineStr"><is><t>x</t></is></c><c r="B2"><v>30</v></c><c r="C2" t="inlineStr"><is><t>m</t></is></c></row>',
     )
-    expect(readSheet(xml, ctx(), { range: 'A:B' }).headers).toEqual(['H'])
+    const { headers, rows } = readSheet(xml, ctx(), { range: 'B:C' })
+    expect(headers).toEqual(['年齢', '備考'])
+    expect(rows[0]?.cells.年齢?.value).toBe(30)
+  })
+
+  it('行のみ range "2:3" は全列・指定行に限定する', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>無視</t></is></c></row>' +
+        '<row r="2"><c r="A2" t="inlineStr"><is><t>H</t></is></c></row>' +
+        '<row r="3"><c r="A3"><v>9</v></c></row>',
+    )
+    const { headers, rows } = readSheet(xml, ctx(), { range: '2:3' })
+    expect(headers).toEqual(['H'])
+    expect(rows[0]?.cells.H?.value).toBe(9)
+  })
+
+  it('形式が不正な range は RangeFormatError を投げる', () => {
+    const xml = sheet('<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>')
+    expect(() => readSheet(xml, ctx(), { range: '???' })).toThrow(RangeFormatError)
+    expect(() => readSheet(xml, ctx(), { range: '1A:2' })).toThrow(RangeFormatError)
+    // 開始・終了で形式が食い違う混在も不正
+    expect(() => readSheet(xml, ctx(), { range: 'A1:D' })).toThrow(RangeFormatError)
   })
 })

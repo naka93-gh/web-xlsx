@@ -53,6 +53,12 @@ describe('parse（低レベル E2E）', () => {
     if (!result.ok) expect(result.error.code).toBe('not-zip')
   })
 
+  it('不正な range は invalid-range（ファイル破損と区別する）', async () => {
+    const result = await parse(await xlsx(), { range: 'A1:D' })
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe('invalid-range')
+  })
+
   it('シートは宣言されているが本体 XML が欠落は invalid-xlsx', async () => {
     // worksheets/sheet1.xml を意図的に含めない（rels だけ参照が残る）
     const bytes = await buildXlsx({
