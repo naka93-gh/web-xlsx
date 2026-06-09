@@ -23,6 +23,7 @@ export type FileErrorCode =
   | 'invalid-xlsx' // 必要パーツ(workbook/sheet 等)が欠落
   | 'sheet-not-found' // 指定シートが無い
   | 'unsupported-environment' // DecompressionStream 非対応
+  | 'too-large' // 解凍サイズが上限超過（ZIP 爆弾対策）
 
 /**
  * file 単位のエラー

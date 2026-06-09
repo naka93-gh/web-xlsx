@@ -6,18 +6,31 @@ const SIG_LFH = 0x04034b50 // Local File Header
 
 /** ZIP 読み取りの失敗 */
 export class ZipError extends Error {
-  readonly code: 'not-zip' | 'unsupported'
-  constructor(code: 'not-zip' | 'unsupported', message: string) {
+  readonly code: 'not-zip' | 'unsupported' | 'too-large'
+  constructor(code: 'not-zip' | 'unsupported' | 'too-large', message: string) {
     super(message)
     this.name = 'ZipError'
     this.code = code
   }
 }
 
+// ZIP 爆弾対策の既定上限（数 KB が GB に膨らむ展開で OOM するのを防ぐ）
+const DEFAULT_MAX_ENTRY_BYTES = 300 * 1024 * 1024 // 単体エントリの解凍サイズ上限
+const DEFAULT_MAX_TOTAL_BYTES = 600 * 1024 * 1024 // アーカイブ全体の累積解凍サイズ上限
+
+/** 解凍サイズの上限設定 */
+export interface ZipLimits {
+  /** 単体エントリの解凍サイズ上限（バイト） */
+  maxEntryBytes?: number
+  /** アーカイブ全体の累積解凍サイズ上限（バイト） */
+  maxTotalBytes?: number
+}
+
 /** central directory の 1 エントリ */
 type Entry = {
   method: number
   compressedSize: number
+  uncompressedSize: number
   localOffset: number
 }
 
@@ -31,13 +44,38 @@ export interface ZipArchive {
 
 const utf8 = new TextDecoder()
 
-/** deflate-raw を展開する */
-async function inflateRaw(data: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
+/**
+ * deflate-raw を展開する
+ *
+ * 中央ディレクトリの宣言値は信用できない（ZIP 爆弾は小さく偽装しうる）ため、
+ * ストリームを 1 チャンクずつ読みながら累積バイトを測り、limit 超過で打ち切る
+ */
+async function inflateRaw(data: Uint8Array<ArrayBuffer>, limit: number): Promise<Uint8Array> {
   if (typeof DecompressionStream === 'undefined') {
     throw new ZipError('unsupported', 'DecompressionStream が利用できない環境です')
   }
   const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
-  return new Uint8Array(await new Response(stream).arrayBuffer())
+  const reader = stream.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > limit) {
+      await reader.cancel() // 上流の展開を止めてメモリ膨張を防ぐ
+      throw new ZipError('too-large', `解凍サイズが上限(${limit} バイト)を超えました`)
+    }
+    chunks.push(value)
+  }
+
+  const out = new Uint8Array(size)
+  let at = 0
+  for (const chunk of chunks) {
+    out.set(chunk, at)
+    at += chunk.byteLength
+  }
+  return out
 }
 
 /** 末尾から EOCD シグネチャを探す（後ろにコメントが付きうる） */
@@ -56,7 +94,12 @@ function findEocd(bytes: Uint8Array, view: DataView): number {
  *
  * 展開は readBytes/readText の呼び出し時に遅延実行し、結果をキャッシュする
  */
-export async function openZip(input: ArrayBuffer | Uint8Array): Promise<ZipArchive> {
+export async function openZip(
+  input: ArrayBuffer | Uint8Array,
+  limits: ZipLimits = {},
+): Promise<ZipArchive> {
+  const maxEntryBytes = limits.maxEntryBytes ?? DEFAULT_MAX_ENTRY_BYTES
+  const maxTotalBytes = limits.maxTotalBytes ?? DEFAULT_MAX_TOTAL_BYTES
   // 解析中はバッファを ArrayBuffer 固定で扱う（Blob/DecompressionStream の型要件）
   const bytes = (
     input instanceof Uint8Array ? input : new Uint8Array(input)
@@ -78,16 +121,18 @@ export async function openZip(input: ArrayBuffer | Uint8Array): Promise<ZipArchi
     }
     const method = view.getUint16(p + 10, true)
     const compressedSize = view.getUint32(p + 20, true)
+    const uncompressedSize = view.getUint32(p + 24, true)
     const nameLen = view.getUint16(p + 28, true)
     const extraLen = view.getUint16(p + 30, true)
     const commentLen = view.getUint16(p + 32, true)
     const localOffset = view.getUint32(p + 42, true)
     const name = utf8.decode(bytes.subarray(p + 46, p + 46 + nameLen))
-    entries.set(name, { method, compressedSize, localOffset })
+    entries.set(name, { method, compressedSize, uncompressedSize, localOffset })
     p += 46 + nameLen + extraLen + commentLen
   }
 
   const cache = new Map<string, Uint8Array>()
+  let totalDecompressed = 0 // 展開済みエントリの累積バイト（アーカイブ全体の上限判定）
 
   async function readBytes(name: string): Promise<Uint8Array> {
     const cached = cache.get(name)
@@ -105,14 +150,29 @@ export async function openZip(input: ArrayBuffer | Uint8Array): Promise<ZipArchi
     const dataStart = entry.localOffset + 30 + nameLen + extraLen
     const data = bytes.subarray(dataStart, dataStart + entry.compressedSize)
 
+    // 残り予算（全体上限 − 既展開分）と単体上限の小さい方をこのエントリの上限に
+    const limit = Math.min(maxEntryBytes, maxTotalBytes - totalDecompressed)
+    if (limit < 0) {
+      throw new ZipError('too-large', `解凍サイズが全体上限(${maxTotalBytes} バイト)を超えました`)
+    }
+
     let out: Uint8Array
     if (entry.method === 0) {
+      // 無圧縮は入力バッファ内に収まっており膨張しないが、累積予算には数える
+      if (data.byteLength > limit) {
+        throw new ZipError('too-large', `解凍サイズが上限(${limit} バイト)を超えました`)
+      }
       out = data
     } else if (entry.method === 8) {
-      out = await inflateRaw(data)
+      // 宣言値が正直に大きい爆弾は展開前に弾く（嘘の宣言値はストリーム側で打ち切る）
+      if (entry.uncompressedSize > limit) {
+        throw new ZipError('too-large', `解凍サイズが上限(${limit} バイト)を超えました`)
+      }
+      out = await inflateRaw(data, limit)
     } else {
       throw new ZipError('not-zip', `未対応の圧縮方式です: ${entry.method}`)
     }
+    totalDecompressed += out.byteLength
     cache.set(name, out)
     return out
   }

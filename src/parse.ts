@@ -20,7 +20,12 @@ const EMPTY_STYLES: Styles = { isDate: () => false }
 /** 例外を FileError に変換する */
 function toFileError(error: unknown): FileError {
   if (error instanceof ZipError) {
-    const code = error.code === 'unsupported' ? 'unsupported-environment' : 'not-zip'
+    const code =
+      error.code === 'unsupported'
+        ? 'unsupported-environment'
+        : error.code === 'too-large'
+          ? 'too-large'
+          : 'not-zip'
     return { code, message: error.message }
   }
   return {

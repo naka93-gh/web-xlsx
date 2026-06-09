@@ -117,3 +117,47 @@ describe('openZip', () => {
     await expect(zip.readBytes('missing')).rejects.toBeInstanceOf(ZipError)
   })
 })
+
+describe('openZip 解凍サイズ上限（ZIP 爆弾対策）', () => {
+  /** EOCD から中央ディレクトリ先頭オフセットを得る */
+  function cdOffset(zip: Uint8Array): number {
+    const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength)
+    return view.getUint32(zip.length - 22 + 16, true)
+  }
+
+  it('単体エントリの宣言サイズが上限超過なら too-large で弾く', async () => {
+    const zip = await openZip(await buildZip([{ name: 'big.xml', content: 'x'.repeat(200) }]), {
+      maxEntryBytes: 50,
+    })
+    await expect(zip.readBytes('big.xml')).rejects.toMatchObject({ code: 'too-large' })
+  })
+
+  it('宣言サイズを小さく偽装しても、ストリーム展開中の累積で打ち切る', async () => {
+    // deflate で大きく膨らむのに CDH の uncompressedSize を 5 と偽る ZIP 爆弾相当
+    const bytes = await buildZip([{ name: 'bomb.xml', content: 'x'.repeat(5000), method: 8 }])
+    new DataView(bytes.buffer).setUint32(cdOffset(bytes) + 24, 5, true)
+    const zip = await openZip(bytes, { maxEntryBytes: 100 })
+    await expect(zip.readBytes('bomb.xml')).rejects.toMatchObject({ code: 'too-large' })
+  })
+
+  it('アーカイブ全体の累積が上限を超えたら too-large', async () => {
+    const zip = await openZip(
+      await buildZip([
+        { name: 'a.xml', content: 'x'.repeat(60) },
+        { name: 'b.xml', content: 'x'.repeat(60) },
+      ]),
+      { maxTotalBytes: 100 },
+    )
+    expect((await zip.readBytes('a.xml')).length).toBe(60)
+    await expect(zip.readBytes('b.xml')).rejects.toMatchObject({ code: 'too-large' })
+  })
+
+  it('上限内なら通常どおり読める', async () => {
+    const content = 'x'.repeat(1000)
+    const zip = await openZip(await buildZip([{ name: 'ok.xml', content, method: 8 }]), {
+      maxEntryBytes: 4096,
+      maxTotalBytes: 8192,
+    })
+    expect(await zip.readText('ok.xml')).toBe(content)
+  })
+})
