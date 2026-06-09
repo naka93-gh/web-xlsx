@@ -1,0 +1,51 @@
+import { describe, expect, it } from 'vitest'
+import { applySchema } from '../src/schema'
+import type { SheetRow } from '../src/sheet'
+import type { Schema } from '../src/types'
+
+const row = (cells: Record<string, unknown>): SheetRow => ({
+  rowNum: 2,
+  cells: Object.fromEntries(
+    Object.entries(cells).map(([k, v]) => [k, { value: v as never, raw: undefined }]),
+  ),
+})
+
+const first = (schema: Schema, cells: Record<string, unknown>) => {
+  const { data, errors } = applySchema([row(cells)], schema)
+  return { value: data[0], errors }
+}
+
+describe('applySchema 型強制の分岐', () => {
+  it('boolean: 真値/偽値/文字列/数値/不正', () => {
+    const s = { f: { prop: 'f', type: 'boolean' } } satisfies Schema
+    expect(first(s, { f: true }).value?.f).toBe(true)
+    expect(first(s, { f: 'TRUE' }).value?.f).toBe(true)
+    expect(first(s, { f: '0' }).value?.f).toBe(false)
+    expect(first(s, { f: 1 }).value?.f).toBe(true)
+    expect(first(s, { f: 'はい' }).errors[0]?.message).toBe('真偽値ではありません')
+  })
+
+  it('number: 数値文字列は変換、非数値はエラー', () => {
+    const s = { n: { prop: 'n', type: 'number' } } satisfies Schema
+    expect(first(s, { n: '42' }).value?.n).toBe(42)
+    expect(first(s, { n: 'x' }).errors[0]?.message).toBe('数値ではありません')
+  })
+
+  it('date: Date はそのまま / ISO 文字列は変換 / 不正文字列・非日付はエラー', () => {
+    const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
+    expect(first(s, { d: new Date(2020, 0, 1) }).value?.d).toBeInstanceOf(Date)
+    expect((first(s, { d: '2020-01-01' }).value?.d as Date).getFullYear()).toBe(2020)
+    expect(first(s, { d: 'not-a-date' }).errors[0]?.message).toBe('日付ではありません')
+    expect(first(s, { d: 123 }).errors[0]?.message).toBe('日付ではありません')
+  })
+
+  it('空セルで required でも default でもなければ null', () => {
+    const s = { x: { prop: 'x', type: 'string' } } satisfies Schema
+    expect(first(s, { x: null }).value?.x).toBeNull()
+  })
+
+  it('スキーマ列がシートに無い場合も null/必須エラー', () => {
+    const s = { 無い列: { prop: 'missing', type: 'string', required: true } } satisfies Schema
+    expect(first(s, {}).errors[0]?.message).toBe('必須です')
+  })
+})

@@ -22,8 +22,10 @@ function collectRows(xml: string): PresentRow[] {
 
   let inSheetData = false
   let row: PresentRow | null = null
+  let lastRowNum = 0
   let nextCol = 0
   let cell: RawCell | null = null
+  let cellCol = 0
   let inV = false
   let valueBuf = ''
   let inIs = false
@@ -39,13 +41,15 @@ function collectRows(xml: string): PresentRow[] {
         // sheetData の外は無視
       } else if (token.name === 'row') {
         const r = token.attrs.r
-        const num: number = r !== undefined ? Number.parseInt(r, 10) : (row?.rowNum ?? 0) + 1
+        const num: number = r !== undefined ? Number.parseInt(r, 10) : lastRowNum + 1
+        lastRowNum = num
         row = { rowNum: num, cells: new Map() }
         nextCol = 0
       } else if (token.name === 'c') {
         const ref = token.attrs.r ?? ''
         const col = ref ? parseRef(ref).col : nextCol
         nextCol = col + 1
+        cellCol = col
         const raw: RawCell = { ref }
         if (token.attrs.t !== undefined) raw.type = token.attrs.t
         if (token.attrs.s !== undefined) raw.style = Number.parseInt(token.attrs.s, 10)
@@ -83,7 +87,7 @@ function collectRows(xml: string): PresentRow[] {
         inIs = false
         if (cell) cell.inlineText = inlineBuf
       } else if (token.name === 'c') {
-        if (cell && row) row.cells.set(parseRef(cell.ref).col, cell)
+        if (cell && row) row.cells.set(cellCol, cell)
         cell = null
       } else if (token.name === 'row') {
         if (row) rows.push(row)
