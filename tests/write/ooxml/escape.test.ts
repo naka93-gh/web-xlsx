@@ -18,6 +18,15 @@ describe('escapeText（テキストノード用）', () => {
   it('対象外の文字はそのまま', () => {
     expect(escapeText('日本語 abc 123')).toBe('日本語 abc 123')
   })
+
+  it('XML 禁止の制御文字を除去する', () => {
+    expect(escapeText('a\x00b\x08c\x0bd\x0ce\x1ff')).toBe('abcdef')
+    expect(escapeText('\x00\x01\x02')).toBe('')
+  })
+
+  it('tab/LF は許可文字なので残す（CR のみ実体化）', () => {
+    expect(escapeText('a\tb\nc')).toBe('a\tb\nc')
+  })
 })
 
 describe('escapeAttr（属性値用）', () => {
