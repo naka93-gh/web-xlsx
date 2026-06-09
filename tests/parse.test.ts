@@ -52,6 +52,18 @@ describe('parse（低レベル E2E）', () => {
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('not-zip')
   })
+
+  it('ZIP は開けるが中身破損（中央ディレクトリ不正）は invalid-xlsx', async () => {
+    // EOCD は見つかるが cdOffset 先に CDH シグネチャが無い ZIP を組む
+    const bytes = new Uint8Array(8 + 22) // [壊れた CD 領域][EOCD]
+    const view = new DataView(bytes.buffer)
+    view.setUint32(8, 0x06054b50, true) // EOCD シグネチャ
+    view.setUint16(8 + 10, 1, true) // 総エントリ数 = 1
+    view.setUint32(8 + 16, 0, true) // cdOffset = 0（先頭はゼロ埋めで CDH 不一致）
+    const result = await parse(bytes)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe('invalid-xlsx')
+  })
 })
 
 describe('parseFile', () => {

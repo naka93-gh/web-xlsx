@@ -25,7 +25,9 @@ function toFileError(error: unknown): FileError {
         ? 'unsupported-environment'
         : error.code === 'too-large'
           ? 'too-large'
-          : 'not-zip'
+          : error.code === 'not-zip'
+            ? 'not-zip'
+            : 'invalid-xlsx' // ZIP は開けたが中身が壊れている/未対応
     return { code, message: error.message }
   }
   return {

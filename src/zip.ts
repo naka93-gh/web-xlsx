@@ -4,10 +4,20 @@ const SIG_EOCD = 0x06054b50 // End Of Central Directory
 const SIG_CDH = 0x02014b50 // Central Directory Header
 const SIG_LFH = 0x04034b50 // Local File Header
 
+/**
+ * ZIP 読み取りの失敗コード
+ *
+ * - `not-zip` … そもそも ZIP コンテナとして認識できない（EOCD 不在 等）
+ * - `invalid` … ZIP としては開けたが中身が壊れている/未対応（中央ディレクトリ破損・ZIP64 等）
+ * - `unsupported` … 実行環境が DecompressionStream 非対応
+ * - `too-large` … 解凍サイズが上限超過
+ */
+export type ZipErrorCode = 'not-zip' | 'invalid' | 'unsupported' | 'too-large'
+
 /** ZIP 読み取りの失敗 */
 export class ZipError extends Error {
-  readonly code: 'not-zip' | 'unsupported' | 'too-large'
-  constructor(code: 'not-zip' | 'unsupported' | 'too-large', message: string) {
+  readonly code: ZipErrorCode
+  constructor(code: ZipErrorCode, message: string) {
     super(message)
     this.name = 'ZipError'
     this.code = code
@@ -109,14 +119,14 @@ export async function openZip(
   const total = view.getUint16(eocd + 10, true)
   const cdOffset = view.getUint32(eocd + 16, true)
   if (total === 0xffff || cdOffset === 0xffffffff) {
-    throw new ZipError('not-zip', 'ZIP64 は未対応です')
+    throw new ZipError('invalid', 'ZIP64 は未対応です')
   }
 
   const entries = new Map<string, Entry>()
   let p = cdOffset
   for (let idx = 0; idx < total; idx++) {
     if (view.getUint32(p, true) !== SIG_CDH) {
-      throw new ZipError('not-zip', '中央ディレクトリが壊れています')
+      throw new ZipError('invalid', '中央ディレクトリが壊れています')
     }
     const method = view.getUint16(p + 10, true)
     const compressedSize = view.getUint32(p + 20, true)
@@ -138,10 +148,10 @@ export async function openZip(
     if (cached) return cached
 
     const entry = entries.get(name)
-    if (!entry) throw new ZipError('not-zip', `エントリが見つかりません: ${name}`)
+    if (!entry) throw new ZipError('invalid', `エントリが見つかりません: ${name}`)
 
     if (view.getUint32(entry.localOffset, true) !== SIG_LFH) {
-      throw new ZipError('not-zip', 'ローカルヘッダが壊れています')
+      throw new ZipError('invalid', 'ローカルヘッダが壊れています')
     }
     // name/extra 長はローカルヘッダ自身から読む（中央ディレクトリと異なりうる）
     const nameLen = view.getUint16(entry.localOffset + 26, true)
@@ -169,7 +179,7 @@ export async function openZip(
       }
       out = await inflateRaw(data, limit)
     } else {
-      throw new ZipError('not-zip', `未対応の圧縮方式です: ${entry.method}`)
+      throw new ZipError('invalid', `未対応の圧縮方式です: ${entry.method}`)
     }
     totalDecompressed += out.byteLength
     cache.set(name, out)
