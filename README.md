@@ -17,6 +17,12 @@ xlsx を TypeScript で読み書きするライブラリ。Excel ファイルを
 pnpm add web-xlsx
 ```
 
+## 動作環境
+
+ESM 専用。解凍/圧縮に `DecompressionStream('deflate-raw')` を使うため、**Node.js 20.12 以上**（21.2+ / 22+ も可）、ブラウザは Compression Streams（deflate-raw）対応の現行版が必要。polyfill は同梱しない。
+
+CommonJS のコードから使う場合は、動的 `import()`、または ESM を `require()` できる Node 20.19+ / 22.12+ を使う。
+
 ## 使い方
 
 列ごとに型・必須・既定値・追加検証をスキーマで定義すると、検証済みの型付き行が返る。検証に通らなかった行は `data` から外れ、行番号付きで `errors` に入る。これが主な使い方。
