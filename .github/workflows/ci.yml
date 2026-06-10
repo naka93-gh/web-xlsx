@@ -17,7 +17,7 @@ jobs:
       matrix:
         # ライブラリ実行下限は 20.12（engines）だが、テスト実行系（vitest/vite/rolldown）は
         # Node ^20.19 || >=22.12 を要求するため、CI の 20.x 下限は 20.19 に合わせる
-        node-version: ['20.19', '22', '24']
+        node-version: ["20.19", "22", "24"]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -29,3 +29,17 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+
+  # バンドルサイズ LIMIT（read+write 合算 gzip 10KB） としてチェック
+  # Node 版に依らないので単発実行
+  size:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm size:check

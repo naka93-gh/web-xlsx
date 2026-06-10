@@ -54,6 +54,7 @@
     "build:min": "esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outfile=dist/index.min.js",
     "size": "pnpm build:min && printf 'min: %s B / gzip: %s B\\n' $(wc -c < dist/index.min.js) $(gzip -c dist/index.min.js | wc -c)",
     "size:write": "esbuild src/write.ts --bundle --minify --format=esm --target=es2020 --outfile=dist/write.min.js && printf 'write min: %s B / gzip: %s B\\n' $(wc -c < dist/write.min.js) $(gzip -c dist/write.min.js | wc -c)",
+    "size:check": "node scripts/size.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
