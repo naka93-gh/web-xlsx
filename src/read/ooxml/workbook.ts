@@ -6,7 +6,6 @@ import type { ZipArchive } from '../io/zip'
 /** 1 シートの解決済み情報 */
 export type SheetRef = {
   name: string
-  sheetId: number
   /** zip 内の実ファイルパス */
   path: string
 }
@@ -41,10 +40,10 @@ export function parseRels(xml: string): Relationship[] {
 
 /** workbook.xml からシート一覧と date1904 を取り出す */
 export function parseWorkbookXml(xml: string): {
-  sheets: { name: string; sheetId: number; rid: string }[]
+  sheets: { name: string; rid: string }[]
   date1904: boolean
 } {
-  const sheets: { name: string; sheetId: number; rid: string }[] = []
+  const sheets: { name: string; rid: string }[] = []
   let date1904 = false
   for (const token of tokenize(xml)) {
     if (token.type !== 'open') continue
@@ -54,7 +53,6 @@ export function parseWorkbookXml(xml: string): {
     } else if (token.name === 'sheet') {
       sheets.push({
         name: token.attrs.name ?? '',
-        sheetId: Number.parseInt(token.attrs.sheetId ?? '0', 10),
         rid: token.attrs['r:id'] ?? '',
       })
     }
@@ -113,7 +111,7 @@ export async function openWorkbook(zip: ZipArchive): Promise<Workbook> {
   for (const entry of entries) {
     const rel = relById.get(entry.rid)
     if (!rel || rel.mode === 'External') continue
-    sheets.push({ name: entry.name, sheetId: entry.sheetId, path: joinPath(baseDir, rel.target) })
+    sheets.push({ name: entry.name, path: joinPath(baseDir, rel.target) })
   }
 
   const workbook: Workbook = { sheets, date1904 }

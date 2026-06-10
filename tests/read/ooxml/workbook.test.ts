@@ -36,8 +36,8 @@ describe('parseWorkbookXml', () => {
     const { sheets, date1904 } = parseWorkbookXml(xml)
     expect(date1904).toBe(true)
     expect(sheets).toEqual([
-      { name: 'A', sheetId: 1, rid: 'rId1' },
-      { name: 'B', sheetId: 2, rid: 'rId2' },
+      { name: 'A', rid: 'rId1' },
+      { name: 'B', rid: 'rId2' },
     ])
   })
 
@@ -65,8 +65,8 @@ describe('openWorkbook', () => {
     const wb = await openWorkbook(await openZip(await buildXlsx(files())))
     expect(wb.date1904).toBe(false)
     expect(wb.sheets).toEqual([
-      { name: '従業員', sheetId: 1, path: 'xl/worksheets/sheet1.xml' },
-      { name: '部署', sheetId: 2, path: 'xl/worksheets/sheet2.xml' },
+      { name: '従業員', path: 'xl/worksheets/sheet1.xml' },
+      { name: '部署', path: 'xl/worksheets/sheet2.xml' },
     ])
     expect(wb.stylesPath).toBe('xl/styles.xml')
     expect(wb.sharedStringsPath).toBe('xl/sharedStrings.xml')

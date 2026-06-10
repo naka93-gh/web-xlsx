@@ -8,8 +8,6 @@ import type { Styles } from './styles'
 
 /** シート XML から取り出した未解決のセル */
 export type RawCell = {
-  /** セル参照 "A1" */
-  ref: string
   /** t 属性（s/inlineStr/str/b/e/d/n、無印は数値） */
   type?: string
   /** s 属性（cellXfs のインデックス） */

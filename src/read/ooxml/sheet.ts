@@ -52,7 +52,7 @@ function collectRows(xml: string): PresentRow[] {
         const col = parseRef(ref)?.col ?? nextCol
         nextCol = col + 1
         cellCol = col
-        const raw: RawCell = { ref }
+        const raw: RawCell = {}
         if (token.attrs.t !== undefined) raw.type = token.attrs.t
         if (token.attrs.s !== undefined) raw.style = Number.parseInt(token.attrs.s, 10)
         cell = raw

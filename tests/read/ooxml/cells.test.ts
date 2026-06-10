@@ -16,53 +16,51 @@ const ctx = (over: Partial<ResolveContext> = {}): ResolveContext => ({
 
 describe('resolveCell', () => {
   it('共有文字列', () => {
-    expect(resolveCell({ ref: 'A1', type: 's', value: '1' }, ctx())).toBe('Bob')
+    expect(resolveCell({ type: 's', value: '1' }, ctx())).toBe('Bob')
   })
 
   it('共有文字列の範囲外は null', () => {
-    expect(resolveCell({ ref: 'A1', type: 's', value: '9' }, ctx())).toBeNull()
+    expect(resolveCell({ type: 's', value: '9' }, ctx())).toBeNull()
   })
 
   it('inline 文字列', () => {
-    expect(resolveCell({ ref: 'A1', type: 'inlineStr', inlineText: 'inline' }, ctx())).toBe(
-      'inline',
-    )
+    expect(resolveCell({ type: 'inlineStr', inlineText: 'inline' }, ctx())).toBe('inline')
   })
 
   it('数式の文字列結果', () => {
-    expect(resolveCell({ ref: 'A1', type: 'str', value: 'result' }, ctx())).toBe('result')
+    expect(resolveCell({ type: 'str', value: 'result' }, ctx())).toBe('result')
   })
 
   it('真偽値', () => {
-    expect(resolveCell({ ref: 'A1', type: 'b', value: '1' }, ctx())).toBe(true)
-    expect(resolveCell({ ref: 'A1', type: 'b', value: '0' }, ctx())).toBe(false)
+    expect(resolveCell({ type: 'b', value: '1' }, ctx())).toBe(true)
+    expect(resolveCell({ type: 'b', value: '0' }, ctx())).toBe(false)
   })
 
   it('エラーセルは null', () => {
-    expect(resolveCell({ ref: 'A1', type: 'e', value: '#N/A' }, ctx())).toBeNull()
+    expect(resolveCell({ type: 'e', value: '#N/A' }, ctx())).toBeNull()
   })
 
   it('数値（無印）', () => {
-    expect(resolveCell({ ref: 'A1', value: '42.5' }, ctx())).toBe(42.5)
+    expect(resolveCell({ value: '42.5' }, ctx())).toBe(42.5)
   })
 
   it('日付スタイルの数値は Date', () => {
-    const v = resolveCell({ ref: 'A1', value: '43831', style: 0 }, ctx({ styles: dateStyles }))
+    const v = resolveCell({ value: '43831', style: 0 }, ctx({ styles: dateStyles }))
     expect(v).toBeInstanceOf(Date)
     expect((v as Date).getFullYear()).toBe(2020)
   })
 
   it('日付スタイルでも 1904 系を尊重', () => {
     const v = resolveCell(
-      { ref: 'A1', value: String(43831 - 1462), style: 0 },
+      { value: String(43831 - 1462), style: 0 },
       ctx({ styles: dateStyles, date1904: true }),
     )
     expect((v as Date).getFullYear()).toBe(2020)
   })
 
   it('空セルは null', () => {
-    expect(resolveCell({ ref: 'A1' }, ctx())).toBeNull()
-    expect(resolveCell({ ref: 'A1', value: '' }, ctx())).toBeNull()
+    expect(resolveCell({}, ctx())).toBeNull()
+    expect(resolveCell({ value: '' }, ctx())).toBeNull()
   })
 })
 
