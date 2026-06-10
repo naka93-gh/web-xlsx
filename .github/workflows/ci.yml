@@ -15,8 +15,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # engines 下限の 20.12 と、現行 LTS / 最新。deflate-raw 非対応の 18 は入れない
-        node-version: ['20.12', '22', '24']
+        # ライブラリ実行下限は 20.12（engines）だが、テスト実行系（vitest/vite/rolldown）は
+        # Node ^20.19 || >=22.12 を要求するため、CI の 20.x 下限は 20.19 に合わせる
+        node-version: ['20.19', '22', '24']
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
