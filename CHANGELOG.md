@@ -1,32 +1,21 @@
 # Changelog
 
-このプロジェクトの変更点を記録する。形式は [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に従い、[セマンティックバージョニング](https://semver.org/lang/ja/)を採用する。
+## 0.2.0
 
-## [Unreleased]
+日付の TZ 解釈オプションと堅牢性の強化。
 
-## [0.1.0] - 2026-06-10
+- 日付の `utc` オプションを追加（`parse` / `build`）。既定はローカル壁時計で 0.1.0 と互換、`true` で UTC 固定。読み書きで揃えれば往復一致する
+- スキーマの `validate` が例外を投げても `parse` を止めず、その行を `errors` に落とすようにした
+- 異常系のファズ／プロパティテストを追加し、壊れた入力でも `parse` が throw しないことを保証
+- CI を Node 20.19 / 22 / 24 マトリクス化し、バンドルサイズ上限（gzip 10KB）を CI で強制
 
-初回リリース。
+## 0.1.0
 
-### 読み取り
+初回リリース。xlsx を型付きスキーマで読み書きする、依存ゼロ・極小ライブラリ。
 
 - `parse` / `parseFile` で xlsx をネイティブ型（string / number / boolean / Date）の行として読む
-- スキーマを渡すと列を検証・型付けし、`InferRow` で行型を推論。検証に落ちた行は `errors` に分離
-- `sheet` / `headerRow` / `range`（矩形・列のみ・行のみ）/ `skipEmptyRows` オプション
-- ZIP 解凍上限（`limits`）で ZIP 爆弾を防止
-- 同名ヘッダーは `duplicate-header` で明示拒否
+- スキーマで列を検証・型付けし、`InferRow` で行型を推論。検証に落ちた行は `errors` に分離
+- `sheet` / `headerRow` / `range` / `skipEmptyRows` オプション、ZIP 爆弾対策の `limits`
 - 失敗は例外でなく Result 型（`ParseResult`）で返す
-
-### 書き出し
-
-- `web-xlsx/write` の `build` で行データを xlsx バイト列（Uint8Array）に書き出す
-- 読み取りに使ったスキーマをそのまま渡せる
-- ヘッダー太字・先頭行固定・列幅自動のスタイルを既定で付与（`style: false` で無効化）
-
-### その他
-
-- 依存ゼロ。ブラウザの `CompressionStream` / `DecompressionStream` を利用
-- 読み（`.`）と書き（`./write`）をサブパス分割し、読むだけならバンドルに書き出しを含めない
-
-[Unreleased]: https://github.com/naka93-gh/web-xlsx/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/naka93-gh/web-xlsx/releases/tag/v0.1.0
+- `web-xlsx/write` の `build` で行データを xlsx バイト列に書き出す（スキーマ共用・既定スタイル付き）
+- 読み（`.`）と書き（`./write`）をサブパス分割。Web 標準の `CompressionStream` / `DecompressionStream` を利用

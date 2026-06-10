@@ -1,6 +1,6 @@
 {
   "name": "web-xlsx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Read and write Excel (.xlsx) files in the browser or Node.js. Zero dependencies.",
   "keywords": [
     "xlsx",
