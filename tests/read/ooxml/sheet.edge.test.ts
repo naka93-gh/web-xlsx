@@ -7,6 +7,7 @@ const ctx = (sharedStrings: string[] = []): ResolveContext => ({
   sharedStrings,
   styles: { isDate: () => false } as Styles,
   date1904: false,
+  utc: false,
 })
 
 const sheet = (rows: string) => `<worksheet><sheetData>${rows}</sheetData></worksheet>`

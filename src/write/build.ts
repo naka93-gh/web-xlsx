@@ -17,6 +17,13 @@ export type BuildOptions = {
    * `false` で一括無効化。日付の表示書式は値の正しさに必須なので常に有効
    */
   style?: boolean
+
+  /**
+   * Date を UTC 固定でシリアル値にする（既定: false=ローカルの壁時計）
+   *
+   * `parse` の同名オプションと対。読み書きで同じ値を使えば往復は一致する
+   */
+  utc?: boolean
 }
 
 /** unknown 値を Cell に寄せる（Cell 外の型は String 化、未入力は null） */
@@ -84,6 +91,7 @@ export async function build(
   options: BuildOptions & { schema?: Schema } = {},
 ): Promise<Uint8Array> {
   const style = options.style ?? true
+  const utc = options.utc ?? false
   const { headers, matrix } = options.schema
     ? fromSchema(rows, options.schema)
     : fromRows(rows as Row[])
@@ -97,6 +105,6 @@ export async function build(
     part('xl/workbook.xml', workbookXml(options.sheetName ?? 'Sheet1')),
     part('xl/_rels/workbook.xml.rels', workbookRelsXml()),
     part('xl/styles.xml', stylesXml()),
-    part('xl/worksheets/sheet1.xml', sheetXml(headers, matrix, { style })),
+    part('xl/worksheets/sheet1.xml', sheetXml(headers, matrix, { style, utc })),
   ])
 }

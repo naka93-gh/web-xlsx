@@ -76,3 +76,36 @@ describe('dateToSerial（serialToDate の逆）', () => {
     expect(back.getTime()).toBe(d.getTime())
   })
 })
+
+describe('utc オプション（TZ 非依存で暦日が一致）', () => {
+  it('serialToDate(utc): 43831 → UTC 2020-01-01 0:00', () => {
+    const d = serialToDate(43831, { utc: true })
+    expect(d.getTime()).toBe(Date.UTC(2020, 0, 1))
+    expect(d.toISOString()).toBe('2020-01-01T00:00:00.000Z')
+  })
+
+  it('serialToDate(utc): 小数部は UTC 時刻に', () => {
+    const d = serialToDate(43831.5, { utc: true })
+    expect(d.getUTCHours()).toBe(12)
+    expect(d.getUTCDate()).toBe(1)
+  })
+
+  it('dateToSerial(utc): UTC 2020-01-01 → 43831', () => {
+    expect(dateToSerial(new Date(Date.UTC(2020, 0, 1)), { utc: true })).toBe(43831)
+  })
+
+  it('dateToSerial(utc): UTC 時刻が小数部に', () => {
+    expect(dateToSerial(new Date(Date.UTC(2020, 0, 1, 12)), { utc: true })).toBeCloseTo(43831.5, 9)
+  })
+
+  it('utc 同士で往復一致する（時刻つき）', () => {
+    const d = new Date(Date.UTC(2024, 5, 15, 9, 30, 45))
+    const back = serialToDate(dateToSerial(d, { utc: true }), { utc: true })
+    expect(back.getTime()).toBe(d.getTime())
+  })
+
+  it('utc は date1904 と併用できる: シリアル 0 → UTC 1904-01-01', () => {
+    const d = serialToDate(0, { date1904: true, utc: true })
+    expect(d.getTime()).toBe(Date.UTC(1904, 0, 1))
+  })
+})

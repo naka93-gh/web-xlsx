@@ -69,6 +69,28 @@ describe('parseIsoDate（日時 YYYY-MM-DDThh:mm…）', () => {
   })
 })
 
+describe('parseIsoDate（utc オプション）', () => {
+  it('日付のみは UTC 0:00 として構築する', () => {
+    const d = parseIsoDate('2020-01-31', true)
+    expect(d?.getTime()).toBe(Date.UTC(2020, 0, 31))
+    expect(d?.toISOString()).toBe('2020-01-31T00:00:00.000Z')
+  })
+
+  it('日付のみの不正日（2024-02-30）は utc でも null', () => {
+    expect(parseIsoDate('2024-02-30', true)).toBeNull()
+  })
+
+  it('TZ 指定なし日時は UTC として解釈する', () => {
+    const d = parseIsoDate('2020-06-15T13:45', true)
+    expect(d?.getTime()).toBe(Date.UTC(2020, 5, 15, 13, 45))
+  })
+
+  it('TZ 指定ありはそのまま（オフセット優先）', () => {
+    const d = parseIsoDate('2020-06-15T13:45:00+09:00', true)
+    expect(d?.getTime()).toBe(Date.UTC(2020, 5, 15, 4, 45))
+  })
+})
+
 describe('parseIsoDate（不正形式は null）', () => {
   it('空文字', () => {
     expect(parseIsoDate('')).toBeNull()

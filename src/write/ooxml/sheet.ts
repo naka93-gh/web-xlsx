@@ -37,12 +37,12 @@ function columnWidths(headers: string[], rows: Cell[][]): number[] {
 }
 
 /** 1 セルを <c> へ。style は cellXfs インデックス（0 は省略） */
-function cellXml(ref: string, value: Cell, style: number): string {
+function cellXml(ref: string, value: Cell, style: number, utc: boolean): string {
   const s = style > 0 ? ` s="${style}"` : ''
   if (value === null || value === '') return `<c r="${ref}"${s}/>`
   if (value instanceof Date) {
     // Date はシリアル値なので表示書式が必須。渡された style より DATE_STYLE を優先する
-    return `<c r="${ref}" s="${DATE_STYLE}"><v>${dateToSerial(value)}</v></c>`
+    return `<c r="${ref}" s="${DATE_STYLE}"><v>${dateToSerial(value, { utc })}</v></c>`
   }
   if (typeof value === 'number') {
     return Number.isFinite(value) ? `<c r="${ref}"${s}><v>${value}</v></c>` : `<c r="${ref}"${s}/>`
@@ -55,11 +55,11 @@ function cellXml(ref: string, value: Cell, style: number): string {
 }
 
 /** 1 行を <row> へ */
-function rowXml(rowIndex: number, cells: Cell[], style: number): string {
+function rowXml(rowIndex: number, cells: Cell[], style: number, utc: boolean): string {
   const rowNum = rowIndex + 1
   let body = ''
   for (let c = 0; c < cells.length; c++) {
-    body += cellXml(`${colName(c)}${rowNum}`, cells[c] ?? null, style)
+    body += cellXml(`${colName(c)}${rowNum}`, cells[c] ?? null, style, utc)
   }
   return `<row r="${rowNum}">${body}</row>`
 }
@@ -68,6 +68,8 @@ function rowXml(rowIndex: number, cells: Cell[], style: number): string {
 export type SheetOptions = {
   /** ヘッダー太字・先頭行固定・列幅自動を付ける */
   style: boolean
+  /** Date を UTC 固定でシリアル値にする（既定 false=ローカル壁時計） */
+  utc: boolean
 }
 
 /**
@@ -77,7 +79,7 @@ export type SheetOptions = {
  * 先頭行固定（freeze pane）・列幅自動・ヘッダー太字を付与する
  */
 export function sheetXml(headers: string[], rows: Cell[][], options: SheetOptions): string {
-  const { style } = options
+  const { style, utc } = options
 
   const cols =
     style && headers.length > 0
@@ -91,10 +93,10 @@ export function sheetXml(headers: string[], rows: Cell[][], options: SheetOption
     : ''
 
   const headerStyle = style ? HEADER_STYLE : 0
-  let data = rowXml(0, headers, headerStyle)
+  let data = rowXml(0, headers, headerStyle, utc)
   for (let r = 0; r < rows.length; r++) {
     // biome-ignore lint/style/noNonNullAssertion: r は rows の範囲内
-    data += rowXml(r + 1, rows[r]!, 0)
+    data += rowXml(r + 1, rows[r]!, 0, utc)
   }
 
   return `${DECL}<worksheet xmlns="${NS_MAIN}">${sheetViews}${cols}<sheetData>${data}</sheetData></worksheet>`

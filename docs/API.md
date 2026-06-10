@@ -18,10 +18,10 @@ pnpm add web-xlsx
 ```
 
 - ESM のみ（CommonJS の `require` は不可）
-- Node は 22 以上
+- Node は 20.12 以上（`deflate-raw` 対応の下限）
 - 読み取りは解凍に `DecompressionStream` を使う。非対応環境では `unsupported-environment` で失敗する
 - 書き出しは圧縮に `CompressionStream` を使い、非対応環境では無圧縮（stored）で格納する。失敗はしない
-- 日付はローカルタイムゾーン（JST 前提）でシリアル値を `Date` に変換する
+- 日付は既定でローカルの壁時計としてシリアル値を `Date` に変換する（`getFullYear()` 等で読む前提。読み書き対称で TZ に依らず往復一致）。`utc: true` で UTC 固定に切り替えられる
 
 ## 読み取り
 
@@ -186,7 +186,7 @@ type Column = {
 | `boolean` | 真偽セル、`true`/`false`/`1`/`0`（大文字小文字無視） | それ以外 |
 | `date` | 日付セル、ISO 8601 文字列 | ISO 8601 でない文字列、その他の型 |
 
-`date` の文字列は ISO 8601 のみ受理する（`YYYY-MM-DD` または `YYYY-MM-DDThh:mm[:ss[.sss]][Z|±hh:mm]`）。`YYYY/MM/DD` などは受理しない。タイムゾーン指定の無い文字列はローカル時刻として解釈する。
+`date` の文字列は ISO 8601 のみ受理する（`YYYY-MM-DD` または `YYYY-MM-DDThh:mm[:ss[.sss]][Z|±hh:mm]`）。`YYYY/MM/DD` などは受理しない。タイムゾーン指定の無い文字列は既定でローカル時刻、`utc: true` では UTC として解釈する。
 
 ### InferRow による型推論
 
@@ -214,6 +214,7 @@ type ParseOptions = {
   headerRow?: number
   range?: string
   skipEmptyRows?: boolean
+  utc?: boolean
   limits?: ZipLimits
 }
 
@@ -229,6 +230,7 @@ type ZipLimits = {
 | `headerRow` | 最初の非空行 | ヘッダー行の行番号（1 始まり） |
 | `range` | 自動 | データ範囲を限定。`"A1:D100"`（矩形）/ `"A:D"`（列のみ・全行）/ `"2:100"`（行のみ・全列）。形式が不正なら `invalid-range` |
 | `skipEmptyRows` | `true` | 空行を読み飛ばす |
+| `utc` | `false` | 日付を UTC 固定で解釈する。既定はローカルの壁時計（`getFullYear()` で読む）、`true` で `getUTCFullYear()` / `toISOString()` がその暦日になる。書き出しと同じ値を使うこと |
 | `limits` | 単体 300MB / 全体 600MB | ZIP 解凍サイズの上限（ZIP 爆弾対策）。`maxEntryBytes`（単体エントリ）/ `maxTotalBytes`（アーカイブ全体）を上限超過すると `too-large`。正規の巨大ファイルを扱う場合は緩める、より厳しく絞る、いずれにも使える |
 
 スキーマを渡す場合は `{ schema, ...ParseOptions }` のように同じオブジェクトに混ぜる。
@@ -239,6 +241,7 @@ type ZipLimits = {
 type BuildOptions = {
   sheetName?: string
   style?: boolean
+  utc?: boolean
 }
 ```
 
@@ -246,6 +249,7 @@ type BuildOptions = {
 | --- | --- | --- |
 | `sheetName` | `"Sheet1"` | 出力シート名 |
 | `style` | `true` | ヘッダー太字・先頭行固定・列幅自動を付ける。`false` で無効化。日付の表示書式は値の正しさに必須なので常に有効 |
+| `utc` | `false` | `Date` を UTC 固定でシリアル値にする。`parse` の `utc` と対で、読み書きで同じ値を使えば往復一致する |
 
 ## エラー処理
 
@@ -319,7 +323,7 @@ type RowError = {
 ## 制限事項
 
 - 読み取りは数式を評価しない。数式セルはキャッシュ値を読む
-- 日付は JST 前提でシリアル値を変換する
+- 日付は既定でローカルの壁時計としてシリアル値を変換する（`utc: true` で UTC 固定）
 - ヘッダー行に同名の列があると `duplicate-header` で読み取りを拒否する
 - ZIP64・暗号化ブックには未対応
 - ストリーミング、複数シートの一括読み込み、結合セルの値展開は未対応

@@ -6,6 +6,7 @@ const ctx: ResolveContext = {
   sharedStrings: [],
   styles: { isDate: () => false } as Styles,
   date1904: false,
+  utc: false,
 }
 
 describe('resolveCell エッジ', () => {

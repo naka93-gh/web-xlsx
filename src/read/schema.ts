@@ -9,6 +9,7 @@ function coerce(
   type: ColumnType,
   resolved: Cell,
   raw: string | undefined,
+  utc: boolean,
 ): { value: Cell } | { error: string } {
   switch (type) {
     case 'string':
@@ -30,7 +31,7 @@ function coerce(
     case 'date': {
       if (resolved instanceof Date) return { value: resolved }
       if (typeof resolved === 'string') {
-        const d = parseIsoDate(resolved)
+        const d = parseIsoDate(resolved, utc)
         return d ? { value: d } : { error: '日付ではありません' }
       }
       return { error: '日付ではありません' }
@@ -46,6 +47,7 @@ function coerce(
 export function applySchema(
   rows: SheetRow[],
   schema: Schema,
+  utc = false,
 ): { data: Record<string, Cell>[]; errors: RowError[] } {
   const columns = Object.entries(schema)
   const data: Record<string, Cell>[] = []
@@ -75,7 +77,7 @@ export function applySchema(
         }
       }
 
-      const result = coerce(column.type, resolved, cell?.raw)
+      const result = coerce(column.type, resolved, cell?.raw, utc)
       if ('error' in result) {
         rowErrors.push({ row: sr.rowNum, column: header, value: resolved, message: result.error })
         continue

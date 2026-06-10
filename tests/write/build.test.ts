@@ -23,6 +23,18 @@ describe('build → parse ラウンドトリップ（スキーマ無し）', () 
     expect((hire as Date).getDate()).toBe(15)
   })
 
+  it('utc:true で UTC 基準の日付を往復できる', async () => {
+    const hire = new Date(Date.UTC(2020, 0, 15))
+    const bytes = await build([{ 入社日: hire }], { utc: true })
+    const result = await parse(bytes, { utc: true })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const back = result.data[0]?.入社日
+    expect(back).toBeInstanceOf(Date)
+    expect((back as Date).getTime()).toBe(hire.getTime())
+    expect((back as Date).toISOString()).toBe('2020-01-15T00:00:00.000Z')
+  })
+
   it('列順は最初に現れたキー順になる', async () => {
     const bytes = await build([{ b: 1, a: 2 }])
     const result = await parse(bytes)

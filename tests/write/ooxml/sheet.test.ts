@@ -4,7 +4,7 @@ import { sheetXml } from '../../../src/write/ooxml/sheet'
 
 /** 単一データ行の A2 セル XML を取り出す（style 無効でヘッダー装飾を除く） */
 function cellA2(value: Cell): string {
-  const xml = sheetXml(['h'], [[value]], { style: false })
+  const xml = sheetXml(['h'], [[value]], { style: false, utc: false })
   const m = /<row r="2">(.*?)<\/row>/.exec(xml)
   return m?.[1] ?? ''
 }
@@ -51,7 +51,7 @@ describe('cellXml の型別分岐', () => {
 describe('columnWidths（8〜60 クランプ・全角2カウント）', () => {
   /** style 有効時の <cols> 内 width 属性を列順に取り出す */
   function widths(headers: string[], rows: Cell[][] = []): number[] {
-    const xml = sheetXml(headers, rows, { style: true })
+    const xml = sheetXml(headers, rows, { style: true, utc: false })
     const cols = /<cols>(.*?)<\/cols>/.exec(xml)?.[1] ?? ''
     return [...cols.matchAll(/width="(\d+)"/g)].map((m) => Number(m[1]))
   }
@@ -79,19 +79,19 @@ describe('columnWidths（8〜60 クランプ・全角2カウント）', () => {
 
 describe('sheetXml の style オプション', () => {
   it('style 有効で freeze pane と cols を出力', () => {
-    const xml = sheetXml(['h'], [['v']], { style: true })
+    const xml = sheetXml(['h'], [['v']], { style: true, utc: false })
     expect(xml).toContain('state="frozen"')
     expect(xml).toContain('<cols>')
   })
 
   it('style 無効では freeze pane も cols も出さない', () => {
-    const xml = sheetXml(['h'], [['v']], { style: false })
+    const xml = sheetXml(['h'], [['v']], { style: false, utc: false })
     expect(xml).not.toContain('frozen')
     expect(xml).not.toContain('<cols>')
   })
 
   it('1 行目はヘッダー、2 行目以降がデータ', () => {
-    const xml = sheetXml(['名前'], [['田中']], { style: false })
+    const xml = sheetXml(['名前'], [['田中']], { style: false, utc: false })
     expect(xml).toContain('<row r="1">')
     expect(xml).toContain('<row r="2">')
   })

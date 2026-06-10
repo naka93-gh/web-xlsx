@@ -10,6 +10,7 @@ const ctx = (over: Partial<ResolveContext> = {}): ResolveContext => ({
   sharedStrings,
   styles: noDate,
   date1904: false,
+  utc: false,
   ...over,
 })
 

@@ -83,7 +83,12 @@ async function readWorkbookSheet(
         ? parseStyles(await zip.readText(workbook.stylesPath))
         : EMPTY_STYLES
 
-    const ctx: ResolveContext = { sharedStrings, styles, date1904: workbook.date1904 }
+    const ctx: ResolveContext = {
+      sharedStrings,
+      styles,
+      date1904: workbook.date1904,
+      utc: options.utc ?? false,
+    }
     const sheet = readSheet(await zip.readText(sheetRef.path), ctx, options)
     // 同名ヘッダーは Record キー衝突で前列が黙って消えるため、曖昧として明示拒否する
     const duplicate = findDuplicateHeader(sheet.headers)
@@ -150,7 +155,7 @@ export async function parse(
   if (!result.ok) return result
 
   if (options.schema) {
-    const { data, errors } = applySchema(result.sheet.rows, options.schema)
+    const { data, errors } = applySchema(result.sheet.rows, options.schema, options.utc ?? false)
     return { ok: true, data: data as Row[], errors }
   }
 

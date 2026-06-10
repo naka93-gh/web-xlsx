@@ -223,6 +223,15 @@ export type ParseOptions = {
   skipEmptyRows?: boolean
 
   /**
+   * 日付を UTC 固定で解釈する（既定: false=ローカルの壁時計）
+   *
+   * `false` だと返る `Date` はローカル 0:00 で組まれ、`getFullYear()` 等で暦日を読む。
+   * `true` だと UTC 0:00 で組まれ `getUTCFullYear()` / `toISOString()` が暦日になる。
+   * 書き出し（`build`）と読み取りで同じ値を使えば往復は一致する
+   */
+  utc?: boolean
+
+  /**
    * ZIP 解凍サイズの上限（既定: 単体 300MB / 全体 600MB）
    *
    * 巨大ファイルを正規に扱う場合に緩める、より厳しく絞る、いずれにも使える

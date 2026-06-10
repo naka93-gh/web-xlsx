@@ -25,6 +25,8 @@ export type ResolveContext = {
   sharedStrings: string[]
   styles: Styles
   date1904: boolean
+  /** 日付を UTC 固定で解釈する（既定 false=ローカル壁時計） */
+  utc: boolean
 }
 
 /**
@@ -49,14 +51,14 @@ export function resolveCell(cell: RawCell, ctx: ResolveContext): Cell {
       return null
     case 'd':
       // strict OOXML の ISO 日付文字列。不正形式は null
-      return cell.value ? parseIsoDate(cell.value) : null
+      return cell.value ? parseIsoDate(cell.value, ctx.utc) : null
     default: {
       // 数値（t='n' または無印）
       if (cell.value === undefined || cell.value === '') return null
       const num = Number(cell.value)
       if (!Number.isFinite(num)) return null
       if (cell.style !== undefined && ctx.styles.isDate(cell.style)) {
-        return serialToDate(num, { date1904: ctx.date1904 })
+        return serialToDate(num, { date1904: ctx.date1904, utc: ctx.utc })
       }
       return num
     }
