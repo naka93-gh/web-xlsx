@@ -9,3 +9,6 @@ coverage/
 # demo bundle (generated)
 examples/web-xlsx.js
 examples/web-xlsx.write.js
+
+# ローカル限定 開発用ドキュメント
+local-docs/
