@@ -57,7 +57,15 @@ async function inflateRaw(data: Uint8Array<ArrayBuffer>, limit: number): Promise
   if (typeof DecompressionStream === 'undefined') {
     throw new ZipError('unsupported', 'DecompressionStream が利用できない環境です')
   }
-  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
+  let decompressor: DecompressionStream
+  try {
+    decompressor = new DecompressionStream('deflate-raw')
+  } catch {
+    // 構築自体が失敗するのは deflate-raw 未対応（Node 20.11 以下・旧ブラウザ）。
+    // 破損扱い(invalid-xlsx)でなく環境要因として明示する
+    throw new ZipError('unsupported', 'DecompressionStream が deflate-raw に未対応の環境です')
+  }
+  const stream = new Blob([data]).stream().pipeThrough(decompressor)
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
   let size = 0

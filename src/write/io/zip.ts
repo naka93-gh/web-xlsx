@@ -23,9 +23,14 @@ const utf8 = new TextEncoder()
 /** deflate-raw 圧縮。CompressionStream 非対応環境では null（呼び側で stored にフォールバック） */
 async function deflateRaw(data: Uint8Array): Promise<Uint8Array | null> {
   if (typeof CompressionStream === 'undefined') return null
-  const stream = new Blob([data as Uint8Array<ArrayBuffer>])
-    .stream()
-    .pipeThrough(new CompressionStream('deflate-raw'))
+  let compressor: CompressionStream
+  try {
+    compressor = new CompressionStream('deflate-raw')
+  } catch {
+    // deflate-raw 未対応（Node 20.11 以下・旧ブラウザ）。stored で出せば xlsx は成立する
+    return null
+  }
+  const stream = new Blob([data as Uint8Array<ArrayBuffer>]).stream().pipeThrough(compressor)
   return new Uint8Array(await new Response(stream).arrayBuffer())
 }
 

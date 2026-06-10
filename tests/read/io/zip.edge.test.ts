@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { openZip, ZipError } from '../../../src/read/io/zip'
 
 const enc = new TextEncoder()
@@ -71,5 +71,39 @@ describe('openZip エッジ', () => {
   it('未対応の圧縮方式は ZipError', async () => {
     const zip = await openZip(buildSingle('a.txt', 'x', 99))
     await expect(zip.readBytes('a.txt')).rejects.toThrow(/圧縮方式/)
+  })
+})
+
+describe('deflate-raw 非対応環境', () => {
+  // 展開を要する deflate(8) エントリ。展開直前に環境要因で失敗させる
+  const deflated = () => buildSingle('a.txt', 'x', 8)
+
+  it('DecompressionStream が無い環境は unsupported（破損扱いにしない）', async () => {
+    const zip = await openZip(deflated())
+    vi.stubGlobal('DecompressionStream', undefined)
+    try {
+      await expect(zip.readBytes('a.txt')).rejects.toMatchObject({
+        code: 'unsupported',
+      } satisfies Partial<ZipError>)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('DecompressionStream はあるが deflate-raw 未対応（構築で例外）は unsupported', async () => {
+    const zip = await openZip(deflated())
+    class Broken {
+      constructor() {
+        throw new TypeError("Unsupported compression format: 'deflate-raw'")
+      }
+    }
+    vi.stubGlobal('DecompressionStream', Broken)
+    try {
+      await expect(zip.readBytes('a.txt')).rejects.toMatchObject({
+        code: 'unsupported',
+      } satisfies Partial<ZipError>)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

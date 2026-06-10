@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { parse, parseFile } from '../../src/read/parse'
 import { buildXlsx } from '../helpers/zip'
 
@@ -107,6 +107,24 @@ describe('parse（低レベル E2E）', () => {
     const result = await parse(await xlsx(), { limits: { maxTotalBytes: 1 } })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('too-large')
+  })
+
+  it('deflate-raw 非対応環境は unsupported-environment（破損 invalid-xlsx に化けない）', async () => {
+    // 正規 xlsx を先に組んでから、展開器の構築だけを失敗させる
+    const bytes = await xlsx()
+    class Broken {
+      constructor() {
+        throw new TypeError("Unsupported compression format: 'deflate-raw'")
+      }
+    }
+    vi.stubGlobal('DecompressionStream', Broken)
+    try {
+      const result = await parse(bytes)
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error.code).toBe('unsupported-environment')
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })
 
