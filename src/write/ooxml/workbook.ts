@@ -1,8 +1,7 @@
 // パッケージ骨格の XML 生成（Content_Types / rels / workbook）
 
+import { DECL, NS_MAIN } from './consts'
 import { escapeAttr } from './escape'
-
-const DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
 
 /** [Content_Types].xml — 同梱パーツの種別宣言 */
 export function contentTypesXml(): string {
@@ -32,7 +31,7 @@ function sanitizeSheetName(name: string): string {
 /** xl/workbook.xml — 単一シートを宣言 */
 export function workbookXml(sheetName: string): string {
   const name = escapeAttr(sanitizeSheetName(sheetName))
-  return `${DECL}<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">\
+  return `${DECL}<workbook xmlns="${NS_MAIN}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">\
 <sheets><sheet name="${name}" sheetId="1" r:id="rId1"/></sheets>\
 </workbook>`
 }

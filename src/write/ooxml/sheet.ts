@@ -3,11 +3,9 @@
 import { colName } from '../../core/a1'
 import { dateToSerial } from '../../core/serial'
 import type { Cell } from '../../core/types'
+import { DECL, NS_MAIN } from './consts'
 import { escapeText } from './escape'
 import { DATE_STYLE, HEADER_STYLE } from './styles'
-
-const NS_MAIN = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
-const DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
 
 /** 表示幅の概算（全角を 2 カウント） */
 function displayWidth(s: string): number {
