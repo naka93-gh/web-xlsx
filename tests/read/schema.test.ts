@@ -74,6 +74,25 @@ describe('applySchema', () => {
     expect(errors[0]?.message).toBe('負の値です')
   })
 
+  it('validate が throw しても巻き込まず、その行を error にして他行は通す', () => {
+    const s = {
+      年齢: {
+        prop: 'age',
+        type: 'number',
+        validate: (v) => {
+          if (v === 99) throw new Error('検証器が壊れた')
+          return null
+        },
+      },
+    } satisfies Schema
+    const { data, errors } = applySchema(
+      [row(2, { 年齢: { value: 99 } }), row(3, { 年齢: { value: 30 } })],
+      s,
+    )
+    expect(data).toEqual([{ age: 30 }])
+    expect(errors[0]).toMatchObject({ row: 2, column: '年齢', message: '検証器が壊れた' })
+  })
+
   it('大整数IDは string 指定で raw の桁を保持', () => {
     const s = { 社員番号: { prop: 'code', type: 'string' } } satisfies Schema
     const { data } = applySchema(

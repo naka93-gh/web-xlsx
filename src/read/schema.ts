@@ -69,8 +69,14 @@ export function applySchema(
         continue
       }
 
+      // validate はユーザーコールバック。throw しても parse 全体を巻き込まず行エラーに落とす
       if (column.validate) {
-        const message = column.validate(resolved)
+        let message: string | null
+        try {
+          message = column.validate(resolved)
+        } catch (e) {
+          message = e instanceof Error ? e.message : '検証中にエラーが発生しました'
+        }
         if (message) {
           rowErrors.push({ row: sr.rowNum, column: header, value: resolved, message })
           continue
