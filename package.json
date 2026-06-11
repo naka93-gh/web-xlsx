@@ -57,6 +57,7 @@
     "size:check": "node scripts/size.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:dist": "pnpm build && node scripts/smoke.mjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "format": "biome format --write .",
