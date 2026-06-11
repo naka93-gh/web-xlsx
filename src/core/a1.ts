@@ -1,5 +1,13 @@
 // A1 形式の列表記と 0 始まり列インデックスの相互変換（読み書き共有）
 
+/**
+ * Excel の最大列インデックス（XFD = 16,383、0 始まり）
+ *
+ * これを超える列参照は正規の xlsx には存在しない。読み取りで超過を許すと
+ * 矩形化（header:false）で巨大配列を確保させられるため、壊れた参照として扱う
+ */
+export const MAX_COL_INDEX = 16383
+
 /** 列文字（"A" "AA"）を 0 始まりの列インデックスに変換する */
 export function columnToIndex(letters: string): number {
   let n = 0

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ResolveContext } from '../../../src/read/ooxml/cells'
-import { RangeFormatError, readSheet } from '../../../src/read/ooxml/sheet'
+import { RangeFormatError, readSheet, readSheetArrays } from '../../../src/read/ooxml/sheet'
 import type { Styles } from '../../../src/read/ooxml/styles'
 
 const ctx = (sharedStrings: string[] = []): ResolveContext => ({
@@ -119,5 +119,26 @@ describe('readSheet エッジ', () => {
     expect(() => readSheet(xml, ctx(), { range: '1A:2' })).toThrow(RangeFormatError)
     // 開始・終了で形式が食い違う混在も不正
     expect(() => readSheet(xml, ctx(), { range: 'A1:D' })).toThrow(RangeFormatError)
+  })
+
+  it('XFD 超の列を含む range は RangeFormatError を投げる（矩形化の巨大確保を防ぐ）', () => {
+    const xml = sheet('<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>')
+    expect(() => readSheet(xml, ctx(), { range: 'A1:ZZZZ100' })).toThrow(RangeFormatError)
+    expect(() => readSheetArrays(xml, ctx(), { range: 'A:ZZZZZZZ' })).toThrow(RangeFormatError)
+  })
+})
+
+describe('readSheetArrays エッジ（列インデックスの増幅対策）', () => {
+  it('XFD 超の列参照は壊れた参照として出現順にフォールバックし、巨大配列を確保しない', () => {
+    // ZZZZ = 列 index 475,253。クランプが無いと 1 セルで幅 475,254 の配列が行ごとに生まれる
+    const xml = sheet('<row r="1"><c r="ZZZZ1"><v>1</v></c><c r="ZZZZZZZ1"><v>2</v></c></row>')
+    expect(readSheetArrays(xml, ctx())).toEqual([[1, 2]])
+  })
+
+  it('上限ちょうどの列参照（XFD）は通常どおり位置で取り込む', () => {
+    const xml = sheet('<row r="1"><c r="XFD1"><v>9</v></c></row>')
+    const rows = readSheetArrays(xml, ctx())
+    expect(rows[0]?.length).toBe(16384)
+    expect(rows[0]?.[16383]).toBe(9)
   })
 })

@@ -1,6 +1,6 @@
 // ワークシート（xl/worksheets/sheetN.xml）の解析 — 行/セルを組み立てる
 
-import { columnToIndex } from '../../core/a1'
+import { columnToIndex, MAX_COL_INDEX } from '../../core/a1'
 import type { Cell, ParseOptions } from '../../core/types'
 import { tokenize } from '../io/xml'
 import { parseRef, type RawCell, type ResolveContext, resolveCell } from './cells'
@@ -122,8 +122,11 @@ export class RangeFormatError extends Error {
 function parseEndpoint(ref: string): { col: number | null; row: number | null } | null {
   const m = /^([A-Za-z]+)?(\d+)?$/.exec(ref)
   if (!m || (m[1] === undefined && m[2] === undefined)) return null
+  const col = m[1] !== undefined ? columnToIndex(m[1]) : null
+  // XFD 超の列指定は誤りとして弾く（許すと矩形化の右端埋めで巨大配列を確保させられる）
+  if (col !== null && col > MAX_COL_INDEX) return null
   return {
-    col: m[1] !== undefined ? columnToIndex(m[1]) : null,
+    col,
     row: m[2] !== undefined ? Number.parseInt(m[2], 10) : null,
   }
 }

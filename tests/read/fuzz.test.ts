@@ -62,6 +62,10 @@ const REFS = [
   'A0',
   '-',
   'A99999999999999',
+  // XFD 超の巨大「列」参照（header:false の矩形化でメモリ増幅を起こさないこと）
+  'ZZZZ1',
+  'ZZZZZZ1',
+  'ZZZZZZZZZZ99',
 ]
 const TYPES = ['n', 's', 'b', 'str', 'inlineStr', 'd', 'e', 'x', '']
 
@@ -170,6 +174,7 @@ function randomRange(rng: Rng): string {
     'ZZ:AA',
     '@@:##',
     '1:1',
+    'A1:ZZZZ100', // XFD 超の列端点（invalid-range になること）
   ])
 }
 
@@ -181,6 +186,8 @@ function randomOptions(rng: Rng): ParseOptions {
   if (rng.bool(0.3)) opts.sheet = rng.bool() ? rng.int(-2, 4) : rng.string(6)
   if (rng.bool(0.3)) opts.skipEmptyRows = rng.bool()
   if (rng.bool(0.3)) opts.utc = rng.bool()
+  // ヘッダー無しモード（矩形化）も同じ素材で通す（増幅・throw の回帰網）
+  if (rng.bool(0.25)) opts.header = false
   return opts
 }
 

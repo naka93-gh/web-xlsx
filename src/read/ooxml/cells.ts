@@ -1,6 +1,6 @@
 // セル値の解決（raw セル → Cell）と A1 参照ユーティリティ
 
-import { columnToIndex } from '../../core/a1'
+import { columnToIndex, MAX_COL_INDEX } from '../../core/a1'
 import { parseIsoDate } from '../../core/date'
 import { serialToDate } from '../../core/serial'
 import type { Cell } from '../../core/types'
@@ -67,5 +67,8 @@ export function resolveCell(cell: RawCell, ctx: ResolveContext): Cell {
 export function parseRef(ref: string): { col: number; row: number } | null {
   const m = /^([A-Za-z]+)(\d+)$/.exec(ref)
   if (!m) return null
-  return { col: columnToIndex(m[1] as string), row: Number.parseInt(m[2] as string, 10) }
+  const col = columnToIndex(m[1] as string)
+  // XFD 超は正規の xlsx に無い壊れた参照。許すと矩形化で巨大配列を確保させられる
+  if (col > MAX_COL_INDEX) return null
+  return { col, row: Number.parseInt(m[2] as string, 10) }
 }
