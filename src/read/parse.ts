@@ -47,6 +47,20 @@ function toFileError(error: unknown): FileError {
   }
 }
 
+/**
+ * スキーマの必須列（required かつ defaultValue 無し）のうちヘッダーに無いものを返す
+ *
+ * 該当列はどの行も「必須です」になり有効行がゼロになるため、行エラーの量産でなく
+ * ファイル単位の missing-column で早期に返す（列名タイポ等をすぐ気づけるように）。
+ * defaultValue 持ちは全行補完で成立し、required 無しは null になるだけなので対象外
+ */
+function findMissingRequiredHeaders(schema: Schema, headers: string[]): string[] {
+  const present = new Set(headers)
+  return Object.entries(schema)
+    .filter(([h, col]) => col.required && col.defaultValue === undefined && !present.has(h))
+    .map(([h]) => h)
+}
+
 /** ヘッダー配列の最初の重複名を返す（無ければ undefined） */
 function findDuplicateHeader(headers: string[]): string | undefined {
   const seen = new Set<string>()
@@ -190,6 +204,16 @@ export async function parse(
   if ('arrays' in result) return { ok: true, data: result.arrays, errors: [] }
 
   if (options.schema) {
+    const missing = findMissingRequiredHeaders(options.schema, result.sheet.headers)
+    if (missing.length > 0) {
+      return {
+        ok: false,
+        error: {
+          code: 'missing-column',
+          message: `スキーマの必須列がヘッダーにありません: ${missing.map((h) => `"${h}"`).join(', ')}`,
+        },
+      }
+    }
     const { data, errors } = applySchema(result.sheet.rows, options.schema, options.utc ?? false)
     return { ok: true, data: data as Row[], errors }
   }
@@ -236,7 +260,8 @@ export async function parseFile(
   try {
     buffer = await file.arrayBuffer()
   } catch {
-    return { ok: false, error: { code: 'invalid-xlsx', message: 'ファイルを読み込めませんでした' } }
+    // ファイル破損（invalid-xlsx）とは別事象なので読み込み失敗として区別する
+    return { ok: false, error: { code: 'read-failed', message: 'ファイルを読み込めませんでした' } }
   }
   return parse(buffer, options)
 }

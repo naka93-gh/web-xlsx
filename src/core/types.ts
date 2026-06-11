@@ -24,8 +24,10 @@ export type FileErrorCode =
   | 'sheet-not-found' // 指定シートが無い
   | 'invalid-range' // range オプションの形式が不正
   | 'duplicate-header' // ヘッダー列名が重複し列の対応が一意に決まらない
+  | 'missing-column' // スキーマの必須列（required・defaultValue 無し）がヘッダーに無い
   | 'unsupported-environment' // DecompressionStream 非対応
   | 'too-large' // 解凍サイズが上限超過（ZIP 爆弾対策）
+  | 'read-failed' // File/Blob の読み込みに失敗（parseFile のみ）
 
 /**
  * file 単位のエラー

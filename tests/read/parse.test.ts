@@ -136,6 +136,12 @@ describe('parseFile', () => {
     const result = await parseFile(blob)
     expect(result.ok && result.data[0]?.名前).toBe('Alice')
   })
+
+  it('読み込みに失敗したら read-failed（ファイル破損と区別する）', async () => {
+    const bad = { arrayBuffer: () => Promise.reject(new Error('boom')) } as unknown as Blob
+    const result = await parseFile(bad)
+    expect(!result.ok && result.error.code).toBe('read-failed')
+  })
 })
 
 describe('parse（header:false / 配列 of 配列）', () => {

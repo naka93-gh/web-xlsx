@@ -120,8 +120,9 @@ describe('applySchema', () => {
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 
 describe('parse（高レベル・スキーマ E2E）', () => {
-  it('スキーマで型付けし、不正行は errors に', async () => {
-    const bytes = await buildXlsx({
+  /** ヘッダー「名前 / 年齢」の 2 データ行（3 行目の年齢は数値にならない）fixture */
+  const fixture = () =>
+    buildXlsx({
       '_rels/.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
       'xl/workbook.xml': `<workbook><sheets><sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>`,
       'xl/_rels/workbook.xml.rels': `<Relationships>
@@ -135,6 +136,9 @@ describe('parse（高レベル・スキーマ E2E）', () => {
         <row r="3"><c r="A3" t="inlineStr"><is><t>Bob</t></is></c><c r="B3" t="inlineStr"><is><t>x</t></is></c></row>
       </sheetData></worksheet>`,
     })
+
+  it('スキーマで型付けし、不正行は errors に', async () => {
+    const bytes = await fixture()
 
     const schema = {
       名前: { prop: 'name', type: 'string', required: true },
@@ -150,5 +154,29 @@ describe('parse（高レベル・スキーマ E2E）', () => {
       column: '年齢',
       message: '数値ではありません',
     })
+  })
+
+  it('必須列がヘッダーに無ければ missing-column のファイルエラー', async () => {
+    const schema = {
+      名前: { prop: 'name', type: 'string', required: true },
+      社員番号: { prop: 'code', type: 'string', required: true },
+    } satisfies Schema
+    const result = await parse(await fixture(), { schema })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.code).toBe('missing-column')
+    expect(result.error.message).toContain('社員番号')
+  })
+
+  it('任意列・defaultValue 持ちの必須列はヘッダーに無くてもエラーにしない', async () => {
+    const schema = {
+      名前: { prop: 'name', type: 'string', required: true },
+      部署: { prop: 'dept', type: 'string' }, // 無い列・任意 → null
+      区分: { prop: 'kind', type: 'string', required: true, defaultValue: '一般' }, // 無い列・既定値で補完
+    } satisfies Schema
+    const result = await parse(await fixture(), { schema })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.data[0]).toEqual({ name: 'Alice', dept: null, kind: '一般' })
   })
 })
