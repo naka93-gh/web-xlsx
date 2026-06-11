@@ -36,9 +36,13 @@ const total = rows.reduce((sum, r) => sum + r.gzip, 0)
 const fmt = (n) => `${(n / 1024).toFixed(2)} KB`
 
 for (const r of rows) {
-  console.log(`${r.label.padEnd(22)} min ${fmt(r.min).padStart(9)}  gzip ${fmt(r.gzip).padStart(9)}`)
+  console.log(
+    `${r.label.padEnd(22)} min ${fmt(r.min).padStart(9)}  gzip ${fmt(r.gzip).padStart(9)}`,
+  )
 }
-console.log(`合算 (read+write)${' '.repeat(19)}gzip ${fmt(total).padStart(9)}  / LIMIT ${fmt(LIMIT)}`)
+console.log(
+  `合算 (read+write)${' '.repeat(19)}gzip ${fmt(total).padStart(9)}  / LIMIT ${fmt(LIMIT)}`,
+)
 
 if (total > LIMIT) {
   console.error(`\n✗ LIMIT 超過: 合算 ${fmt(total)} > ${fmt(LIMIT)}（超過 ${total - LIMIT} B）`)

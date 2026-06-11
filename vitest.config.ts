@@ -8,7 +8,8 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary'],
       include: ['src/**/*.ts'],
-      exclude: ['src/types.ts', 'src/index.ts'],
+      // 型定義と re-export 専用エントリは計測から外す
+      exclude: ['src/core/types.ts', 'src/index.ts', 'src/write.ts'],
       thresholds: {
         lines: 90,
         functions: 90,
