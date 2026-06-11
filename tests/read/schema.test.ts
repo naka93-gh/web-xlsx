@@ -53,6 +53,20 @@ describe('applySchema', () => {
     expect(data[0]?.kind).toBe('未設定')
   })
 
+  it('defaultValue は列の type に対応する型に限定される（型レベル）', () => {
+    // 型変換を通さず出力に入るため、InferRow の型と実体がずれる指定はコンパイルエラーにする
+    const ok = {
+      入社日: { prop: 'hireDate', type: 'date', defaultValue: new Date(2020, 0, 1) },
+    } satisfies Schema
+    const ng = {
+      // @ts-expect-error type:'date' に文字列の defaultValue は渡せない
+      入社日: { prop: 'hireDate', type: 'date', defaultValue: '2020-01-01' },
+    } satisfies Schema
+    const { data } = applySchema([row(2, { 入社日: { value: null } })], ok)
+    expect(data[0]?.hireDate).toEqual(new Date(2020, 0, 1))
+    expect(ng).toBeDefined()
+  })
+
   it('型不一致は error', () => {
     const { data, errors } = applySchema(
       [row(2, { 名前: { value: 'x' }, 年齢: { value: 'abc' } })],

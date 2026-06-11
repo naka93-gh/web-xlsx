@@ -99,9 +99,9 @@ export type ParseResult<T> =
 export type ColumnType = 'string' | 'number' | 'boolean' | 'date'
 
 /**
- * スキーマの 1 列定義
+ * 列定義の本体（`type` ごとに `defaultValue` の型が決まる）
  */
-export type Column = {
+type ColumnOf<T extends ColumnType, V> = {
   /**
    * 出力プロパティ名
    */
@@ -110,7 +110,7 @@ export type Column = {
   /**
    * 期待する型（`'string'` は生の格納文字列を読み大整数IDの桁落ちを回避）
    */
-  type: ColumnType
+  type: T
 
   /**
    * 必須なら未入力でエラー
@@ -118,15 +118,30 @@ export type Column = {
   required?: boolean
 
   /**
-   * 空セル時の補完値
+   * 空セル時の補完値（列の `type` に対応する型のみ）
+   *
+   * 型変換・`validate` を通さずそのまま出力行に入るため、
+   * {@link InferRow} が主張する型と実体を一致させる目的で型を限定する
    */
-  defaultValue?: Cell
+  defaultValue?: V
 
   /**
    * 追加検証（エラーメッセージ or null を返す）
    */
   validate?: (value: Cell) => string | null
 }
+
+/**
+ * スキーマの 1 列定義
+ *
+ * `defaultValue` は `type` に対応する TS 型に限定される
+ * （例: `type: 'date'` なら `Date`。文字列を渡すとコンパイルエラー）
+ */
+export type Column =
+  | ColumnOf<'string', string>
+  | ColumnOf<'number', number>
+  | ColumnOf<'boolean', boolean>
+  | ColumnOf<'date', Date>
 
 /**
  * スキーマ — ヘッダー名 → 列定義（{@link Column}）のマップ
