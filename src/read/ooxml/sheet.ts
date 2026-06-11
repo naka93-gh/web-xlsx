@@ -41,8 +41,10 @@ function collectRows(xml: string): PresentRow[] {
       } else if (!inSheetData) {
         // sheetData の外は無視
       } else if (token.name === 'row') {
-        const r = token.attrs.r
-        const num: number = r !== undefined ? Number.parseInt(r, 10) : lastRowNum + 1
+        const parsed = token.attrs.r !== undefined ? Number.parseInt(token.attrs.r, 10) : Number.NaN
+        // 壊れた r 属性はセル側（parseRef 失敗 → 出現順）と同じく連番にフォールバック
+        // （NaN を通すと lastRowNum に伝播し、以降の行番号比較がすべて false になる）
+        const num = Number.isFinite(parsed) ? parsed : lastRowNum + 1
         lastRowNum = num
         row = { rowNum: num, cells: new Map() }
         nextCol = 0

@@ -51,6 +51,18 @@ describe('readSheet エッジ', () => {
     expect(readSheet(xml, ctx()).rows[0]?.cells.H?.value).toBe(9)
   })
 
+  it('壊れた r 属性の行は NaN を伝播させず連番にフォールバック', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>' +
+        '<row r="abc"><c><v>9</v></c></row>' +
+        '<row><c><v>10</v></c></row>',
+    )
+    const { rows } = readSheet(xml, ctx())
+    expect(rows.map((r) => r.rowNum)).toEqual([2, 3])
+    expect(rows[0]?.cells.H?.value).toBe(9)
+    expect(rows[1]?.cells.H?.value).toBe(10)
+  })
+
   it('非空行が無ければ空の結果', () => {
     expect(readSheet(sheet(''), ctx())).toEqual({ headers: [], rows: [] })
   })
