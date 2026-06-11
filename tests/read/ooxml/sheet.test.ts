@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ResolveContext } from '../../../src/read/ooxml/cells'
-import { readSheet } from '../../../src/read/ooxml/sheet'
+import { readSheet, readSheetArrays } from '../../../src/read/ooxml/sheet'
 import type { Styles } from '../../../src/read/ooxml/styles'
 
 const sharedStrings = ['名前', '年齢', 'Alice', 'Bob']
@@ -102,5 +102,72 @@ describe('readSheet', () => {
     const cell = readSheet(xml, ctx()).rows[0]?.cells.名前
     expect(cell?.raw).toBe('12345678901234567')
     expect(typeof cell?.value).toBe('number')
+  })
+})
+
+describe('readSheetArrays（ヘッダー無し / Cell[][]）', () => {
+  it('全行を最大使用列まで null 埋めして矩形化する', () => {
+    // 1行目は A,B / 2行目は A のみ / 3行目は A,B,C → 幅は最大の 3 に揃う
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1"><v>30</v></c></row>' +
+        '<row r="2"><c r="A2" t="s"><v>1</v></c></row>' +
+        '<row r="3"><c r="A3" t="s"><v>2</v></c><c r="B3"><v>40</v></c><c r="C3" t="s"><v>3</v></c></row>',
+    )
+    expect(readSheetArrays(xml, ctx())).toEqual([
+      ['名前', 30, null],
+      ['年齢', null, null],
+      ['Alice', 40, 'Bob'],
+    ])
+  })
+
+  it('先頭の空列も列A起点で保持する（案A）', () => {
+    // 値が B 列から始まっても index 0 は列A（null）になる
+    const xml = sheet(
+      '<row r="1"><c r="B1"><v>30</v></c><c r="C1" t="s"><v>2</v></c></row>' +
+        '<row r="2"><c r="B2"><v>25</v></c></row>',
+    )
+    expect(readSheetArrays(xml, ctx())).toEqual([
+      [null, 30, 'Alice'],
+      [null, 25, null],
+    ])
+  })
+
+  it('存在する行のみ返す（歯抜けの行は挿入しない）', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="s"><v>0</v></c></row>' +
+        '<row r="5"><c r="A5" t="s"><v>1</v></c></row>',
+    )
+    expect(readSheetArrays(xml, ctx())).toEqual([['名前'], ['年齢']])
+  })
+
+  it('空行は既定でスキップ・skipEmptyRows:false で保持', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="s"><v>0</v></c></row>' +
+        '<row r="2"><c r="A2"/></row>' +
+        '<row r="3"><c r="A3" t="s"><v>1</v></c></row>',
+    )
+    expect(readSheetArrays(xml, ctx())).toEqual([['名前'], ['年齢']])
+    expect(readSheetArrays(xml, ctx(), { skipEmptyRows: false })).toEqual([
+      ['名前'],
+      [null],
+      ['年齢'],
+    ])
+  })
+
+  it('range は左端を index 0 とし、範囲右端まで埋める', () => {
+    // B2:C3 → 列B が index 0、幅は 2（C まで）。範囲外の A 列と 1行目は除外
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>' +
+        '<row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2"><v>30</v></c></row>' +
+        '<row r="3"><c r="B3"><v>25</v></c><c r="C3" t="s"><v>3</v></c></row>',
+    )
+    expect(readSheetArrays(xml, ctx(), { range: 'B2:C3' })).toEqual([
+      [30, null],
+      [25, 'Bob'],
+    ])
+  })
+
+  it('値の無いシートは空配列を返す', () => {
+    expect(readSheetArrays(sheet(''), ctx())).toEqual([])
   })
 })

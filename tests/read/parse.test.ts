@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { Cell, Schema } from '../../src/core/types'
 import { parse, parseFile } from '../../src/read/parse'
 import { buildXlsx } from '../helpers/zip'
 
@@ -134,5 +135,42 @@ describe('parseFile', () => {
     const blob = new Blob([bytes])
     const result = await parseFile(blob)
     expect(result.ok && result.data[0]?.名前).toBe('Alice')
+  })
+})
+
+describe('parse（header:false / 配列 of 配列）', () => {
+  it('ヘッダーを解決せずヘッダー行も含めて Cell[][] で返す', async () => {
+    const result = await parse(await xlsx(), { header: false })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.errors).toEqual([])
+    // ヘッダー行もデータとして 3 行・幅 3 の矩形
+    expect(result.data).toHaveLength(3)
+    expect(result.data[0]).toEqual(['名前', '年齢', '入社日'])
+    expect(result.data[1]?.[0]).toBe('Alice')
+    expect(result.data[1]?.[1]).toBe(30)
+    expect(result.data[1]?.[2]).toBeInstanceOf(Date)
+    expect(result.data[2]?.[0]).toBe('Bob')
+  })
+
+  it('戻り値の data は Cell[][] 型に推論される', async () => {
+    const result = await parse(await xlsx(), { header: false })
+    if (result.ok) {
+      // Cell[][] へ代入できる = Row[] ではない（ヘッダー無しの戻り型）
+      const data: Cell[][] = result.data
+      expect(Array.isArray(data[0])).toBe(true)
+    }
+  })
+
+  it('schema との併用は型エラー（排他）', async () => {
+    const schema = { 名前: { prop: 'name', type: 'string' } } satisfies Schema
+    // @ts-expect-error header:false と schema は併用できない
+    await parse(await xlsx(), { header: false, schema })
+  })
+
+  it('parseFile でも header:false が使える', async () => {
+    const blob = new Blob([await xlsx()])
+    const result = await parseFile(blob, { header: false })
+    expect(result.ok && result.data[0]).toEqual(['名前', '年齢', '入社日'])
   })
 })

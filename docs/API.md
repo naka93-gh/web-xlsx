@@ -39,6 +39,10 @@ function parse<S extends Schema>(
   data: ArrayBuffer | Uint8Array,
   options: ParseOptions & { schema: S },
 ): Promise<ParseResult<InferRow<S>>>
+function parse(
+  data: ArrayBuffer | Uint8Array,
+  options: ParseOptions & { header: false },
+): Promise<ParseResult<Cell[]>>
 ```
 
 スキーマを渡さなければ、セルは Excel 上の型（文字列・数値・真偽・日付）のまま `Row` の配列で返る。
@@ -63,6 +67,10 @@ function parseFile<S extends Schema>(
   file: File | Blob,
   options: ParseOptions & { schema: S },
 ): Promise<ParseResult<InferRow<S>>>
+function parseFile(
+  file: File | Blob,
+  options: ParseOptions & { header: false },
+): Promise<ParseResult<Cell[]>>
 ```
 
 ```ts
@@ -94,6 +102,21 @@ if (result.ok) {
   for (const e of result.errors) console.warn(`${e.row}行目 ${e.column}: ${e.message}`)
 }
 ```
+
+### ヘッダー無しで読む（配列 of 配列）
+
+ヘッダー行が無い・複数行ある・定まらない表は `header: false` で読む。ヘッダーを解決せず、各行を `Cell[]` として位置で取り込む。1 行目（ヘッダーらしき行も含む）からすべて `data` に入る。
+
+```ts
+const result = await parse(bytes, { header: false })
+if (result.ok) {
+  // result.data: Cell[][]
+  console.log(result.data[0]) // 1 行目 → ['名前', '年齢', '入社日']
+  console.log(result.data[1]?.[0]) // 2 行目 1 列目 → '田中太郎'
+}
+```
+
+各行は列 A（`index 0`）からシートの最大使用列まで `null` 埋めされ、全行が同じ長さの矩形になる。`range` を渡すと範囲の左端が `index 0` になり、範囲の右端まで埋まる。`schema` とは併用できない（型エラーになる）。`headerRow` は無視される。
 
 ## 書き出し
 
@@ -214,6 +237,7 @@ type ParseOptions = {
   headerRow?: number
   range?: string
   skipEmptyRows?: boolean
+  header?: false
   utc?: boolean
   limits?: ZipLimits
 }
@@ -230,6 +254,7 @@ type ZipLimits = {
 | `headerRow` | 最初の非空行 | ヘッダー行の行番号（1 始まり） |
 | `range` | 自動 | データ範囲を限定。`"A1:D100"`（矩形）/ `"A:D"`（列のみ・全行）/ `"2:100"`（行のみ・全列）。形式が不正なら `invalid-range` |
 | `skipEmptyRows` | `true` | 空行を読み飛ばす |
+| `header` | （ヘッダーあり） | `false` でヘッダーを解決せず行を `Cell[][]` で返す。`schema` とは併用不可・`headerRow` は無視 |
 | `utc` | `false` | 日付を UTC 固定で解釈する。既定はローカルの壁時計（`getFullYear()` で読む）、`true` で `getUTCFullYear()` / `toISOString()` がその暦日になる。書き出しと同じ値を使うこと |
 | `limits` | 単体 300MB / 全体 600MB | ZIP 解凍サイズの上限（ZIP 爆弾対策）。`maxEntryBytes`（単体エントリ）/ `maxTotalBytes`（アーカイブ全体）を上限超過すると `too-large`。正規の巨大ファイルを扱う場合は緩める、より厳しく絞る、いずれにも使える |
 

@@ -216,3 +216,57 @@ export function readSheet(
 
   return { headers, rows }
 }
+
+/**
+ * ワークシート XML をヘッダー無しで `Cell[][]`（配列 of 配列）に変換する
+ *
+ * ヘッダー解決をせず位置で取り込む。各行は列A(index 0)から最大使用列まで
+ * `null` 埋めで矩形化する。`range` 指定時は範囲の左端を index 0 とし、
+ * 範囲右端まで（指定があれば）埋める。空行は `skipEmptyRows` に従う
+ */
+export function readSheetArrays(
+  xml: string,
+  ctx: ResolveContext,
+  options: Pick<ParseOptions, 'range' | 'skipEmptyRows'> = {},
+): Cell[][] {
+  const range = options.range ? parseRange(options.range) : undefined
+  const inColRange = (col: number) => !range || (col >= range.minCol && col <= range.maxCol)
+  const baseCol = range ? range.minCol : 0
+
+  let present = collectRows(xml)
+  if (range) present = present.filter((r) => r.rowNum >= range.minRow && r.rowNum <= range.maxRow)
+
+  // 各行を解決しつつ、範囲内で値を持つ最大列を求める（矩形の右端）
+  const resolved: { values: Map<number, Cell>; hasValue: boolean }[] = []
+  let rightCol = baseCol - 1
+  for (const r of present) {
+    const values = new Map<number, Cell>()
+    let hasValue = false
+    for (const [col, raw] of r.cells) {
+      if (!inColRange(col)) continue
+      const value = resolveCell(raw, ctx)
+      values.set(col, value)
+      if (value !== null) {
+        hasValue = true
+        if (col > rightCol) rightCol = col
+      }
+    }
+    resolved.push({ values, hasValue })
+  }
+  // range で右端が確定しているなら、データが無くてもそこまで埋める
+  if (range && Number.isFinite(range.maxCol)) rightCol = range.maxCol
+
+  const skipEmpty = options.skipEmptyRows ?? true
+  const width = Math.max(0, rightCol - baseCol + 1)
+  const out: Cell[][] = []
+  for (const r of resolved) {
+    if (skipEmpty && !r.hasValue) continue
+    const arr: Cell[] = new Array(width).fill(null)
+    for (const [col, value] of r.values) {
+      const i = col - baseCol
+      if (i >= 0 && i < width) arr[i] = value
+    }
+    out.push(arr)
+  }
+  return out
+}

@@ -1,4 +1,5 @@
 import type {
+  Cell,
   FileError,
   InferRow,
   ParseOptions,
@@ -9,7 +10,13 @@ import type {
 } from '../core/types'
 import { openZip, ZipError } from './io/zip'
 import type { ResolveContext } from './ooxml/cells'
-import { RangeFormatError, type ReadSheetResult, readSheet, type SheetRow } from './ooxml/sheet'
+import {
+  RangeFormatError,
+  type ReadSheetResult,
+  readSheet,
+  readSheetArrays,
+  type SheetRow,
+} from './ooxml/sheet'
 import { parseSharedStrings } from './ooxml/strings'
 import { parseStyles, type Styles } from './ooxml/styles'
 import { openWorkbook, selectSheet } from './ooxml/workbook'
@@ -54,7 +61,11 @@ function findDuplicateHeader(headers: string[]): string | undefined {
 async function readWorkbookSheet(
   data: ArrayBuffer | Uint8Array,
   options: ParseOptions,
-): Promise<{ ok: true; sheet: ReadSheetResult } | { ok: false; error: FileError }> {
+): Promise<
+  | { ok: true; sheet: ReadSheetResult }
+  | { ok: true; arrays: Cell[][] }
+  | { ok: false; error: FileError }
+> {
   try {
     const zip = await openZip(data, options.limits)
     const workbook = await openWorkbook(zip)
@@ -89,7 +100,12 @@ async function readWorkbookSheet(
       date1904: workbook.date1904,
       utc: options.utc ?? false,
     }
-    const sheet = readSheet(await zip.readText(sheetRef.path), ctx, options)
+    const sheetXml = await zip.readText(sheetRef.path)
+    // ヘッダー無しモードはヘッダー解決・重複検査をせず Cell[][] を返す
+    if (options.header === false) {
+      return { ok: true, arrays: readSheetArrays(sheetXml, ctx, options) }
+    }
+    const sheet = readSheet(sheetXml, ctx, options)
     // 同名ヘッダーは Record キー衝突で前列が黙って消えるため、曖昧として明示拒否する
     const duplicate = findDuplicateHeader(sheet.headers)
     if (duplicate !== undefined) {
@@ -113,6 +129,40 @@ function toRow(row: SheetRow): Row {
   return out
 }
 
+// オーバーロードは「具体的 → 一般的」の順に並べる。既定の Row オーバーロードは
+// options が任意の ParseOptions を受けるため最も緩い。header:false は header が
+// ParseOptions のメンバなので、Row より前に置かないと Row 側へ吸われる
+// （schema は schema が ParseOptions に無く excess-property で弾かれるため順序自由）。
+/**
+ * `header: false` でヘッダーを解決せず、行を `Cell[][]`（配列 of 配列）で返す
+ * 位置で取り込むモード。`schema` とは併用できない
+ *
+ * @example
+ * ```ts
+ * const result = await parse(bytes, { header: false })
+ * if (result.ok) console.log(result.data[0][0]) // 1行目1列目
+ * ```
+ */
+export function parse(
+  data: ArrayBuffer | Uint8Array,
+  options: ParseOptions & { header: false; schema?: never },
+): Promise<ParseResult<Cell[]>>
+/**
+ * スキーマを渡すと各列を検証・型付けし、行を {@link InferRow} 型で返す
+ * 検証に失敗した行は `data` から除外され `errors` に記録される
+ *
+ * @example
+ * ```ts
+ * const schema = {
+ *   名前: { prop: 'name', type: 'string', required: true },
+ * } satisfies Schema
+ * const result = await parse(bytes, { schema })
+ * ```
+ */
+export function parse<S extends Schema>(
+  data: ArrayBuffer | Uint8Array,
+  options: ParseOptionsWithSchema<S>,
+): Promise<ParseResult<InferRow<S>>>
 /**
  * xlsx のバイト列をパースして行の配列を返す
  *
@@ -131,28 +181,13 @@ export function parse(
   data: ArrayBuffer | Uint8Array,
   options?: ParseOptions,
 ): Promise<ParseResult<Row>>
-/**
- * スキーマを渡すと各列を検証・型付けし、行を {@link InferRow} 型で返す
- * 検証に失敗した行は `data` から除外され `errors` に記録される
- *
- * @example
- * ```ts
- * const schema = {
- *   名前: { prop: 'name', type: 'string', required: true },
- * } satisfies Schema
- * const result = await parse(bytes, { schema })
- * ```
- */
-export function parse<S extends Schema>(
-  data: ArrayBuffer | Uint8Array,
-  options: ParseOptionsWithSchema<S>,
-): Promise<ParseResult<InferRow<S>>>
 export async function parse(
   data: ArrayBuffer | Uint8Array,
   options: ParseOptions & { schema?: Schema } = {},
-): Promise<ParseResult<Row>> {
+): Promise<ParseResult<Row | Cell[]>> {
   const result = await readWorkbookSheet(data, options)
   if (!result.ok) return result
+  if ('arrays' in result) return { ok: true, data: result.arrays, errors: [] }
 
   if (options.schema) {
     const { data, errors } = applySchema(result.sheet.rows, options.schema, options.utc ?? false)
@@ -162,6 +197,21 @@ export async function parse(
   return { ok: true, data: result.sheet.rows.map(toRow), errors: [] }
 }
 
+// オーバーロード順は {@link parse} と同じ理由で「header:false → schema → 既定」にする
+/**
+ * ヘッダー無し（`Cell[][]`）— {@link parse} の `header: false` と同じ
+ */
+export function parseFile(
+  file: File | Blob,
+  options: ParseOptions & { header: false; schema?: never },
+): Promise<ParseResult<Cell[]>>
+/**
+ * スキーマ付き — 検証・型付けは {@link parse} と同じ
+ */
+export function parseFile<S extends Schema>(
+  file: File | Blob,
+  options: ParseOptionsWithSchema<S>,
+): Promise<ParseResult<InferRow<S>>>
 /**
  * `<input type="file">` で得た `File`（または `Blob`）から xlsx を読む
  *
@@ -178,17 +228,10 @@ export async function parse(
  * ```
  */
 export function parseFile(file: File | Blob, options?: ParseOptions): Promise<ParseResult<Row>>
-/**
- * スキーマ付き — 検証・型付けは {@link parse} と同じ
- */
-export function parseFile<S extends Schema>(
-  file: File | Blob,
-  options: ParseOptionsWithSchema<S>,
-): Promise<ParseResult<InferRow<S>>>
 export async function parseFile(
   file: File | Blob,
   options: ParseOptions & { schema?: Schema } = {},
-): Promise<ParseResult<Row>> {
+): Promise<ParseResult<Row | Cell[]>> {
   let buffer: ArrayBuffer
   try {
     buffer = await file.arrayBuffer()

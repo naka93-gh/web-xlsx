@@ -223,6 +223,14 @@ export type ParseOptions = {
   skipEmptyRows?: boolean
 
   /**
+   * `false` でヘッダーを解決せず `Cell[][]`（配列 of 配列）を返す
+   *
+   * 各行は列A(index 0)からシートの最大使用列まで（欠落セルは `null`）で矩形化される。
+   * `schema` とは併用不可（型で排他）。`headerRow` は無視される
+   */
+  header?: false
+
+  /**
    * 日付を UTC 固定で解釈する（既定: false=ローカルの壁時計）
    *
    * `false` だと返る `Date` はローカル 0:00 で組まれ、`getFullYear()` 等で暦日を読む。
@@ -242,4 +250,8 @@ export type ParseOptions = {
 /**
  * スキーマ付きオプション（高レベル API 用）
  */
-export type ParseOptionsWithSchema<S extends Schema> = ParseOptions & { schema: S }
+export type ParseOptionsWithSchema<S extends Schema> = ParseOptions & {
+  schema: S
+  // header:false（配列 of 配列）と schema 検証は両立しないため型で排他にする
+  header?: never
+}

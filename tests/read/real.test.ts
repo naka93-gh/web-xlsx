@@ -38,6 +38,21 @@ describe('実ファイル / employees.xlsx（型付き取込の主軸）', () =>
     expect((result.data[2]?.入社日 as Date).getFullYear()).toBe(2019)
   })
 
+  it('header:false でヘッダー行も含め矩形の Cell[][] を返す', async () => {
+    const result = await parse(fixture('employees'), { header: false })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    // ヘッダー行 + データ 3 行 = 4 行、全行が幅 5 の矩形
+    expect(result.data).toHaveLength(4)
+    expect(result.data.every((r) => r.length === 5)).toBe(true)
+    expect(result.data[0]).toEqual(['名前', '年齢', '入社日', '在籍', '給与'])
+    expect(result.data[1]?.[0]).toBe('田中太郎')
+    expect(result.data[1]?.[1]).toBe(30)
+    expect(result.data[1]?.[2]).toBeInstanceOf(Date)
+    expect(result.data[1]?.[3]).toBe(true)
+    expect(result.data[1]?.[4]).toBe(4500000)
+  })
+
   it('スキーマで型付けすると推論型で取れ、検証エラーは無い', async () => {
     const schema = {
       名前: { prop: 'name', type: 'string', required: true },
