@@ -63,11 +63,16 @@ function collectRows(xml: string): PresentRow[] {
           cell = null
         }
       } else if (token.name === 'v') {
-        inV = true
-        valueBuf = ''
+        // 自己終了 <v/> は値が無い。フラグを立てると後続セルのテキストを誤って吸う
+        if (!token.selfClosing) {
+          inV = true
+          valueBuf = ''
+        }
       } else if (token.name === 'is') {
-        inIs = true
-        inlineBuf = ''
+        if (!token.selfClosing) {
+          inIs = true
+          inlineBuf = ''
+        }
       } else if (token.name === 't' && inIs) {
         if (!token.selfClosing) inT = true
       } else if (token.name === 'rPh' && inIs) {

@@ -81,6 +81,26 @@ describe('readSheet エッジ', () => {
     expect(rows[0]?.cells.H?.value).toBe(9)
   })
 
+  it('自己終了 <v/> が後続セルのテキストを吸わない', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>H1</t></is></c><c r="B1" t="inlineStr"><is><t>H2</t></is></c></row>' +
+        '<row r="2"><c r="A2"><v/></c><c r="B2" t="inlineStr"><is><t>abc</t></is></c></row>',
+    )
+    const { rows } = readSheet(xml, ctx())
+    expect(rows[0]?.cells.H1?.value).toBeNull()
+    expect(rows[0]?.cells.H2?.value).toBe('abc')
+  })
+
+  it('自己終了 <is/> が後続セルのテキストを吸わない', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>H1</t></is></c><c r="B1" t="inlineStr"><is><t>H2</t></is></c></row>' +
+        '<row r="2"><c r="A2" t="inlineStr"><is/></c><c r="B2"><v>9</v></c></row>',
+    )
+    const { rows } = readSheet(xml, ctx())
+    expect(rows[0]?.cells.H1?.value).toBeNull()
+    expect(rows[0]?.cells.H2?.value).toBe(9)
+  })
+
   it('形式が不正な range は RangeFormatError を投げる', () => {
     const xml = sheet('<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>')
     expect(() => readSheet(xml, ctx(), { range: '???' })).toThrow(RangeFormatError)
