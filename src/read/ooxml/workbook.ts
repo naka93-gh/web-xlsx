@@ -1,7 +1,7 @@
 // ワークブック構造の解決（_rels/.rels → workbook.xml → workbook.xml.rels）
 
-import { tokenize } from '../io/xml'
-import type { ZipArchive } from '../io/zip'
+import { tokenize } from '../io/xml.js'
+import type { ZipArchive } from '../io/zip.js'
 
 /** 1 シートの解決済み情報 */
 export type SheetRef = {

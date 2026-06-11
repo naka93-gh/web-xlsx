@@ -1,9 +1,9 @@
 // ワークシート（xl/worksheets/sheetN.xml）の解析 — 行/セルを組み立てる
 
-import { columnToIndex, MAX_COL_INDEX } from '../../core/a1'
-import type { Cell, ParseOptions } from '../../core/types'
-import { tokenize } from '../io/xml'
-import { parseRef, type RawCell, type ResolveContext, resolveCell } from './cells'
+import { columnToIndex, MAX_COL_INDEX } from '../../core/a1.js'
+import type { Cell, ParseOptions } from '../../core/types.js'
+import { tokenize } from '../io/xml.js'
+import { parseRef, type RawCell, type ResolveContext, resolveCell } from './cells.js'
 
 /** 解決済みのセル（raw は精度対策で元の <v> テキストを保持） */
 export type SheetCell = { value: Cell; raw: string | undefined }

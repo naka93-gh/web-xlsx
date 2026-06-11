@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import type { Schema } from '../../src/core/types'
-import { parse } from '../../src/read/parse'
+import type { Schema } from '../../src/core/types.js'
+import { parse } from '../../src/read/parse.js'
 
 // 実ファイル fixture（openpyxl 生成。自前 writer を通さない独立した本物の OOXML）。
 // [Content_Types].xml・docProps・完全な名前空間・numFmt 由来の日付・t="n"/t="b" など

@@ -7,20 +7,20 @@ import type {
   ParseResult,
   Row,
   Schema,
-} from '../core/types'
-import { openZip, ZipError } from './io/zip'
-import type { ResolveContext } from './ooxml/cells'
+} from '../core/types.js'
+import { openZip, ZipError } from './io/zip.js'
+import type { ResolveContext } from './ooxml/cells.js'
 import {
   RangeFormatError,
   type ReadSheetResult,
   readSheet,
   readSheetArrays,
   type SheetRow,
-} from './ooxml/sheet'
-import { parseSharedStrings } from './ooxml/strings'
-import { parseStyles, type Styles } from './ooxml/styles'
-import { openWorkbook, selectSheet } from './ooxml/workbook'
-import { applySchema } from './schema'
+} from './ooxml/sheet.js'
+import { parseSharedStrings } from './ooxml/strings.js'
+import { parseStyles, type Styles } from './ooxml/styles.js'
+import { openWorkbook, selectSheet } from './ooxml/workbook.js'
+import { applySchema } from './schema.js'
 
 const EMPTY_STYLES: Styles = { isDate: () => false }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { tokenize, type XmlToken } from '../../../src/read/io/xml'
+import { tokenize, type XmlToken } from '../../../src/read/io/xml.js'
 
 const collect = (xml: string): XmlToken[] => [...tokenize(xml)]
 

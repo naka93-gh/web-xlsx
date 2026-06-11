@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { colName, columnToIndex } from '../../src/core/a1'
+import { colName, columnToIndex } from '../../src/core/a1.js'
 
 describe('columnToIndex（列文字 → 0 始まりインデックス）', () => {
   it('1 文字', () => {

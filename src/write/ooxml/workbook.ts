@@ -1,7 +1,7 @@
 // パッケージ骨格の XML 生成（Content_Types / rels / workbook）
 
-import { DECL, NS_MAIN } from './consts'
-import { escapeAttr } from './escape'
+import { DECL, NS_MAIN } from './consts.js'
+import { escapeAttr } from './escape.js'
 
 /** [Content_Types].xml — 同梱パーツの種別宣言 */
 export function contentTypesXml(): string {

@@ -1,6 +1,6 @@
 // ZIP コンテナの読み取り（必要パーツだけ DecompressionStream で遅延展開）
 
-import type { ZipLimits } from '../../core/types'
+import type { ZipLimits } from '../../core/types.js'
 
 const SIG_EOCD = 0x06054b50 // End Of Central Directory
 const SIG_CDH = 0x02014b50 // Central Directory Header

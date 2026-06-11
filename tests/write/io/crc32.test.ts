@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { crc32 } from '../../../src/write/io/crc32'
+import { crc32 } from '../../../src/write/io/crc32.js'
 
 const enc = new TextEncoder()
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { ResolveContext } from '../../../src/read/ooxml/cells'
-import { readSheet, readSheetArrays } from '../../../src/read/ooxml/sheet'
-import type { Styles } from '../../../src/read/ooxml/styles'
+import type { ResolveContext } from '../../../src/read/ooxml/cells.js'
+import { readSheet, readSheetArrays } from '../../../src/read/ooxml/sheet.js'
+import type { Styles } from '../../../src/read/ooxml/styles.js'
 
 const sharedStrings = ['名前', '年齢', 'Alice', 'Bob']
 const noDate: Styles = { isDate: () => false }

@@ -1,8 +1,8 @@
 // スキーマ検証・型付け（SheetRow[] → 型付き行 ＋ 行エラー）
 
-import { formatIsoDate, parseIsoDate } from '../core/date'
-import type { Cell, ColumnType, RowError, Schema } from '../core/types'
-import type { SheetRow } from './ooxml/sheet'
+import { formatIsoDate, parseIsoDate } from '../core/date.js'
+import type { Cell, ColumnType, RowError, Schema } from '../core/types.js'
+import type { SheetRow } from './ooxml/sheet.js'
 
 // 10 進数値の文字列（符号・小数・指数可）。Number() 丸投げだと "0x10" 等の
 // 16 進表記や真偽値まで暗黙に通ってしまうため、受理形式を明示的に限定する

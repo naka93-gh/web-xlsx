@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { openZip } from '../../../src/read/io/zip'
+import { openZip } from '../../../src/read/io/zip.js'
 import {
   openWorkbook,
   parseRels,
   parseWorkbookXml,
   selectSheet,
-} from '../../../src/read/ooxml/workbook'
-import { buildXlsx } from '../../helpers/zip'
+} from '../../../src/read/ooxml/workbook.js'
+import { buildXlsx } from '../../helpers/zip.js'
 
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 

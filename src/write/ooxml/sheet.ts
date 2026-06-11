@@ -1,11 +1,11 @@
 // worksheet（sheet1.xml）生成。セル値・先頭行固定・列幅自動
 
-import { colName } from '../../core/a1'
-import { dateToSerial } from '../../core/serial'
-import type { Cell } from '../../core/types'
-import { DECL, NS_MAIN } from './consts'
-import { escapeText } from './escape'
-import { DATE_STYLE, HEADER_STYLE } from './styles'
+import { colName } from '../../core/a1.js'
+import { dateToSerial } from '../../core/serial.js'
+import type { Cell } from '../../core/types.js'
+import { DECL, NS_MAIN } from './consts.js'
+import { escapeText } from './escape.js'
+import { DATE_STYLE, HEADER_STYLE } from './styles.js'
 
 /** 表示幅の概算（全角を 2 カウント） */
 function displayWidth(s: string): number {

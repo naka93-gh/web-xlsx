@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { openZip } from '../../../src/read/io/zip'
-import { buildZip } from '../../../src/write/io/zip'
+import { openZip } from '../../../src/read/io/zip.js'
+import { buildZip } from '../../../src/write/io/zip.js'
 
 const enc = new TextEncoder()
 

@@ -6,19 +6,19 @@
 // ───────────────────────────────────────────
 // 書き出し関数（エントリポイント）
 // ───────────────────────────────────────────
-export { build } from './write/build' // 行配列 → xlsx バイト列
+export { build } from './write/build.js' // 行配列 → xlsx バイト列
 
 // ───────────────────────────────────────────
 // オプション
 // ───────────────────────────────────────────
-export type { BuildOptions } from './write/build' // build の第 2 引数
+export type { BuildOptions } from './write/build.js' // build の第 2 引数
 
 // ───────────────────────────────────────────
 // スキーマ（読み取りと共用）
 // ───────────────────────────────────────────
-export type { Schema, Column, ColumnType, InferRow } from './core/types' // 列定義と行型の推論
+export type { Schema, Column, ColumnType, InferRow } from './core/types.js' // 列定義と行型の推論
 
 // ───────────────────────────────────────────
 // 値
 // ───────────────────────────────────────────
-export type { Row, Cell } from './core/types' // 行 / セル値
+export type { Row, Cell } from './core/types.js' // 行 / セル値

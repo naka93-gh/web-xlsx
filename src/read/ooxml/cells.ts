@@ -1,10 +1,10 @@
 // セル値の解決（raw セル → Cell）と A1 参照ユーティリティ
 
-import { columnToIndex, MAX_COL_INDEX } from '../../core/a1'
-import { parseIsoDate } from '../../core/date'
-import { serialToDate } from '../../core/serial'
-import type { Cell } from '../../core/types'
-import type { Styles } from './styles'
+import { columnToIndex, MAX_COL_INDEX } from '../../core/a1.js'
+import { parseIsoDate } from '../../core/date.js'
+import { serialToDate } from '../../core/serial.js'
+import type { Cell } from '../../core/types.js'
+import type { Styles } from './styles.js'
 
 /** シート XML から取り出した未解決のセル */
 export type RawCell = {

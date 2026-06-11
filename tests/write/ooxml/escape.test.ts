@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { escapeAttr, escapeText } from '../../../src/write/ooxml/escape'
+import { escapeAttr, escapeText } from '../../../src/write/ooxml/escape.js'
 
 describe('escapeText（テキストノード用）', () => {
   it('& < > と CR を実体化する', () => {

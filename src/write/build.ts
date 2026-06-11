@@ -1,10 +1,10 @@
 // 書き出しオーケストレーション（行 → セル → XML パーツ → ZIP → bytes）
 
-import type { Cell, InferRow, Row, Schema } from '../core/types'
-import { buildZip, type ZipEntry } from './io/zip'
-import { sheetXml } from './ooxml/sheet'
-import { stylesXml } from './ooxml/styles'
-import { contentTypesXml, rootRelsXml, workbookRelsXml, workbookXml } from './ooxml/workbook'
+import type { Cell, InferRow, Row, Schema } from '../core/types.js'
+import { buildZip, type ZipEntry } from './io/zip.js'
+import { sheetXml } from './ooxml/sheet.js'
+import { stylesXml } from './ooxml/styles.js'
+import { contentTypesXml, rootRelsXml, workbookRelsXml, workbookXml } from './ooxml/workbook.js'
 
 /** 書き出しオプション */
 export type BuildOptions = {

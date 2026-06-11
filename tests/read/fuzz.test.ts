@@ -2,10 +2,10 @@
 // 種固定（seeded）なので落ちたケースは seed から再現できる。本体ガードの抜け道を機械的に掘り当てる用途。
 
 import { describe, expect, it } from 'vitest'
-import type { ParseOptions, ParseResult, Row, Schema } from '../../src/core/types'
-import { parse } from '../../src/read/parse'
-import { makeRng, type Rng } from '../helpers/random'
-import { buildXlsx } from '../helpers/zip'
+import type { ParseOptions, ParseResult, Row, Schema } from '../../src/core/types.js'
+import { parse } from '../../src/read/parse.js'
+import { makeRng, type Rng } from '../helpers/random.js'
+import { buildXlsx } from '../helpers/zip.js'
 
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 

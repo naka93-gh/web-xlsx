@@ -1,6 +1,6 @@
 // セルスタイル（xl/styles.xml）の解析 — セルが日付書式かを判定する
 
-import { tokenize } from '../io/xml'
+import { tokenize } from '../io/xml.js'
 
 /** 開いたスタイル表 */
 export type Styles = {

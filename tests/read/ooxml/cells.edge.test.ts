@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parseRef, type ResolveContext, resolveCell } from '../../../src/read/ooxml/cells'
-import type { Styles } from '../../../src/read/ooxml/styles'
+import { parseRef, type ResolveContext, resolveCell } from '../../../src/read/ooxml/cells.js'
+import type { Styles } from '../../../src/read/ooxml/styles.js'
 
 const ctx: ResolveContext = {
   sharedStrings: [],

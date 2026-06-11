@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DATE_STYLE, HEADER_STYLE, stylesXml } from '../../../src/write/ooxml/styles'
+import { DATE_STYLE, HEADER_STYLE, stylesXml } from '../../../src/write/ooxml/styles.js'
 
 const XML = stylesXml()
 

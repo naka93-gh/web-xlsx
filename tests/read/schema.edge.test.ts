@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { Schema } from '../../src/core/types'
-import type { SheetRow } from '../../src/read/ooxml/sheet'
-import { applySchema } from '../../src/read/schema'
+import type { Schema } from '../../src/core/types.js'
+import type { SheetRow } from '../../src/read/ooxml/sheet.js'
+import { applySchema } from '../../src/read/schema.js'
 
 const row = (cells: Record<string, unknown>): SheetRow => ({
   rowNum: 2,

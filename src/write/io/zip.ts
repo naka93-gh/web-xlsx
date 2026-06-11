@@ -1,6 +1,6 @@
 // ZIP コンテナの書き込み（CompressionStream で deflate-raw、CRC32 は自前）
 
-import { crc32 } from './crc32'
+import { crc32 } from './crc32.js'
 
 const SIG_LFH = 0x04034b50 // Local File Header
 const SIG_CDH = 0x02014b50 // Central Directory Header

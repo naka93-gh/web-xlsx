@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { Schema } from '../../src/core/types'
-import { parse } from '../../src/read/parse'
-import { build } from '../../src/write/build'
+import type { Schema } from '../../src/core/types.js'
+import { parse } from '../../src/read/parse.js'
+import { build } from '../../src/write/build.js'
 
 describe('build → parse ラウンドトリップ（スキーマ無し）', () => {
   it('文字列・数値・真偽・日付を書いて読み戻せる', async () => {

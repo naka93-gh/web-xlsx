@@ -6,20 +6,20 @@
 // ───────────────────────────────────────────
 // パース関数（エントリポイント）
 // ───────────────────────────────────────────
-export { parse, parseFile } from './read/parse' // バイト列 / File・Blob から読む
+export { parse, parseFile } from './read/parse.js' // バイト列 / File・Blob から読む
 
 // ───────────────────────────────────────────
 // オプション
 // ───────────────────────────────────────────
-export type { ParseOptions, ZipLimits } from './core/types' // parse の第 2 引数 / 解凍サイズ上限
+export type { ParseOptions, ZipLimits } from './core/types.js' // parse の第 2 引数 / 解凍サイズ上限
 
 // ───────────────────────────────────────────
 // スキーマ（型付き取込）
 // ───────────────────────────────────────────
-export type { Schema, Column, ColumnType, InferRow } from './core/types' // 列定義と行型の推論
+export type { Schema, Column, ColumnType, InferRow } from './core/types.js' // 列定義と行型の推論
 
 // ───────────────────────────────────────────
 // 結果・値
 // ───────────────────────────────────────────
-export type { ParseResult, Row, Cell } from './core/types' // 返り値 / 行 / セル値
-export type { RowError, FileError, FileErrorCode } from './core/types' // 行単位 / ファイル単位のエラー
+export type { ParseResult, Row, Cell } from './core/types.js' // 返り値 / 行 / セル値
+export type { RowError, FileError, FileErrorCode } from './core/types.js' // 行単位 / ファイル単位のエラー

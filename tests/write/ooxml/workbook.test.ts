@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { workbookXml } from '../../../src/write/ooxml/workbook'
+import { workbookXml } from '../../../src/write/ooxml/workbook.js'
 
 /** workbookXml が宣言する sheet 名（name 属性）を取り出す */
 function sheetName(name: string): string {

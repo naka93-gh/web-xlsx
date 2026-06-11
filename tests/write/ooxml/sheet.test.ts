@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Cell } from '../../../src/core/types'
-import { sheetXml } from '../../../src/write/ooxml/sheet'
+import type { Cell } from '../../../src/core/types.js'
+import { sheetXml } from '../../../src/write/ooxml/sheet.js'
 
 /** 単一データ行の A2 セル XML を取り出す（style 無効でヘッダー装飾を除く） */
 function cellA2(value: Cell): string {

@@ -1,6 +1,6 @@
 // styles.xml 生成（最小構成：日付 numFmt とヘッダー太字のみ）
 
-import { DECL, NS_MAIN } from './consts'
+import { DECL, NS_MAIN } from './consts.js'
 
 /** 日付セルに付ける cellXfs インデックス（numFmt 164 = yyyy-mm-dd） */
 export const DATE_STYLE = 1

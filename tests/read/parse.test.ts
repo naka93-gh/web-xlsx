@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Cell, Schema } from '../../src/core/types'
-import { parse, parseFile } from '../../src/read/parse'
-import { buildXlsx } from '../helpers/zip'
+import type { Cell, Schema } from '../../src/core/types.js'
+import { parse, parseFile } from '../../src/read/parse.js'
+import { buildXlsx } from '../helpers/zip.js'
 
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 

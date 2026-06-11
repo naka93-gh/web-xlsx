@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatIsoDate, parseIsoDate } from '../../src/core/date'
+import { formatIsoDate, parseIsoDate } from '../../src/core/date.js'
 
 describe('parseIsoDate（日付のみ YYYY-MM-DD）', () => {
   it('ローカルの壁時計 0:00 として構築する（TZ で暦日がずれない）', () => {
