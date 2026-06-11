@@ -31,6 +31,35 @@ describe('applySchema 型強制の分岐', () => {
     expect(first(s, { n: 'x' }).errors[0]?.message).toBe('数値ではありません')
   })
 
+  it('number: 10 進の符号・小数・指数・前後空白は受理する', () => {
+    const s = { n: { prop: 'n', type: 'number' } } satisfies Schema
+    expect(first(s, { n: '-3.5' }).value?.n).toBe(-3.5)
+    expect(first(s, { n: '.5' }).value?.n).toBe(0.5)
+    expect(first(s, { n: '1e3' }).value?.n).toBe(1000)
+    expect(first(s, { n: ' 42 ' }).value?.n).toBe(42)
+  })
+
+  it('number: 16 進等の非 10 進表記・真偽/日付セル・空白のみはエラー', () => {
+    const s = { n: { prop: 'n', type: 'number' } } satisfies Schema
+    // Number() 丸投げだと 0x10 → 16 / true → 1 / Date → エポックms / " " → 0 になってしまう
+    expect(first(s, { n: '0x10' }).errors[0]?.message).toBe('数値ではありません')
+    expect(first(s, { n: true }).errors[0]?.message).toBe('数値ではありません')
+    expect(first(s, { n: new Date(2020, 0, 1) }).errors[0]?.message).toBe('数値ではありません')
+    expect(first(s, { n: ' ' }).errors[0]?.message).toBe('数値ではありません')
+  })
+
+  it('string: 日付セルは ISO 8601 文字列になる（実装依存の Date.toString にしない）', () => {
+    const s = { x: { prop: 'x', type: 'string' } } satisfies Schema
+    expect(first(s, { x: new Date(2020, 3, 1) }).value?.x).toBe('2020-04-01')
+    expect(first(s, { x: new Date(2020, 3, 1, 9, 30, 5) }).value?.x).toBe('2020-04-01T09:30:05')
+  })
+
+  it('string: utc 指定なら日付セルは UTC の暦日で ISO 文字列になる', () => {
+    const s = { x: { prop: 'x', type: 'string' } } satisfies Schema
+    const { data } = applySchema([row({ x: new Date(Date.UTC(2020, 3, 1)) })], s, true)
+    expect(data[0]?.x).toBe('2020-04-01')
+  })
+
   it('number: 共有文字列セルは raw（index）でなく解決済みテキストを数値化する', () => {
     // t="s" のセルは raw.value が共有文字列の index 文字列。実値 "12345" が index 3 にある状況を模す
     const s = { n: { prop: 'n', type: 'number' } } satisfies Schema

@@ -72,6 +72,28 @@ describe('openZip エッジ', () => {
     const zip = await openZip(buildSingle('a.txt', 'x', 99))
     await expect(zip.readBytes('a.txt')).rejects.toThrow(/圧縮方式/)
   })
+
+  it('中央ディレクトリが末尾で切れていても RangeError でなく ZipError', async () => {
+    const zip = buildSingle('a.txt', 'x', 0)
+    // EOCD の cdOffset を末尾近く（46 バイト読めない位置）に書き換える
+    new DataView(zip.buffer).setUint32(zip.length - 22 + 16, zip.length - 10, true)
+    await expect(openZip(zip)).rejects.toThrow(/中央ディレクトリ/)
+  })
+
+  it('ローカルヘッダが境界外を指していても RangeError でなく ZipError', async () => {
+    const zip = buildSingle('a.txt', 'x', 0)
+    // CDH の localOffset を末尾近く（30 バイト読めない位置）に書き換える
+    const cdStart = zip.length - 22 - (46 + enc.encode('a.txt').length)
+    new DataView(zip.buffer).setUint32(cdStart + 42, zip.length - 5, true)
+    const archive = await openZip(zip)
+    await expect(archive.readBytes('a.txt')).rejects.toThrow(/ローカルヘッダ/)
+  })
+
+  it('壊れた deflate ストリームは英語の内部メッセージでなく ZipError', async () => {
+    // method=8 だが中身は生テキスト（不正な deflate データ）
+    const zip = await openZip(buildSingle('a.txt', 'not-deflate-data', 8))
+    await expect(zip.readBytes('a.txt')).rejects.toThrow(/圧縮データが壊れています/)
+  })
 })
 
 describe('deflate-raw 非対応環境', () => {

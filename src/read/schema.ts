@@ -1,8 +1,12 @@
 // スキーマ検証・型付け（SheetRow[] → 型付き行 ＋ 行エラー）
 
-import { parseIsoDate } from '../core/date'
+import { formatIsoDate, parseIsoDate } from '../core/date'
 import type { Cell, ColumnType, RowError, Schema } from '../core/types'
 import type { SheetRow } from './ooxml/sheet'
+
+// 10 進数値の文字列（符号・小数・指数可）。Number() 丸投げだと "0x10" 等の
+// 16 進表記や真偽値まで暗黙に通ってしまうため、受理形式を明示的に限定する
+const DECIMAL_RE = /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/
 
 /** 解決済み値を列型に強制する */
 function coerce(
@@ -14,12 +18,17 @@ function coerce(
   switch (type) {
     case 'string':
       // 数値セルは raw（元テキスト）を使い大整数の桁落ちを防ぐ。共有文字列等は resolved
-      return { value: typeof resolved === 'number' && raw !== undefined ? raw : String(resolved) }
+      if (typeof resolved === 'number' && raw !== undefined) return { value: raw }
+      // 日付セルは実装依存の Date.toString でなく ISO 8601 にする（type:'date' の受理形式と対称）
+      if (resolved instanceof Date) return { value: formatIsoDate(resolved, utc) }
+      return { value: String(resolved) }
     case 'number': {
       if (typeof resolved === 'number') return { value: resolved }
-      // resolved は文字列セルの実テキスト。raw は t="s" だと共有文字列の index なので使わない
-      const n = Number(resolved)
-      return Number.isFinite(n) ? { value: n } : { error: '数値ではありません' }
+      // 文字列セルの実テキストのみ受理（raw は t="s" だと共有文字列の index なので使わない）
+      if (typeof resolved === 'string' && DECIMAL_RE.test(resolved.trim())) {
+        return { value: Number(resolved) }
+      }
+      return { error: '数値ではありません' }
     }
     case 'boolean': {
       if (typeof resolved === 'boolean') return { value: resolved }

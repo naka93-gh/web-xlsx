@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseIsoDate } from '../../src/core/date'
+import { formatIsoDate, parseIsoDate } from '../../src/core/date'
 
 describe('parseIsoDate（日付のみ YYYY-MM-DD）', () => {
   it('ローカルの壁時計 0:00 として構築する（TZ で暦日がずれない）', () => {
@@ -114,5 +114,28 @@ describe('parseIsoDate（不正形式は null）', () => {
 
   it('数値でないゴミ', () => {
     expect(parseIsoDate('not a date')).toBeNull()
+  })
+})
+
+describe('formatIsoDate（Date → ISO 8601）', () => {
+  it('0:00 は日付のみ、時刻ありは秒まで、ミリ秒ありは .sss 付き', () => {
+    expect(formatIsoDate(new Date(2020, 3, 1))).toBe('2020-04-01')
+    expect(formatIsoDate(new Date(2020, 3, 1, 9, 30, 5))).toBe('2020-04-01T09:30:05')
+    expect(formatIsoDate(new Date(2020, 3, 1, 0, 0, 0, 500))).toBe('2020-04-01T00:00:00.500')
+  })
+
+  it('utc 指定は UTC の暦日・時刻で出す', () => {
+    expect(formatIsoDate(new Date(Date.UTC(2020, 3, 1)), true)).toBe('2020-04-01')
+    expect(formatIsoDate(new Date(Date.UTC(2020, 3, 1, 9, 30, 5)), true)).toBe(
+      '2020-04-01T09:30:05',
+    )
+  })
+
+  it('parseIsoDate と往復が一致する', () => {
+    for (const s of ['2020-04-01', '2020-04-01T09:30:05', '1900-01-02', '2099-12-31']) {
+      const d = parseIsoDate(s)
+      expect(d).not.toBeNull()
+      if (d) expect(formatIsoDate(d)).toBe(s)
+    }
   })
 })

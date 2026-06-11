@@ -69,15 +69,21 @@ async function inflateRaw(data: Uint8Array<ArrayBuffer>, limit: number): Promise
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
   let size = 0
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    size += value.byteLength
-    if (size > limit) {
-      await reader.cancel() // 上流の展開を止めてメモリ膨張を防ぐ
-      throw new ZipError('too-large', `解凍サイズが上限(${limit} バイト)を超えました`)
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      size += value.byteLength
+      if (size > limit) {
+        await reader.cancel() // 上流の展開を止めてメモリ膨張を防ぐ
+        throw new ZipError('too-large', `解凍サイズが上限(${limit} バイト)を超えました`)
+      }
+      chunks.push(value)
     }
-    chunks.push(value)
+  } catch (e) {
+    // 壊れた deflate ストリームの例外は実装依存の英語メッセージなので包み直す
+    if (e instanceof ZipError) throw e
+    throw new ZipError('invalid', '圧縮データが壊れています')
   }
 
   const out = new Uint8Array(size)
@@ -127,7 +133,8 @@ export async function openZip(
   const entries = new Map<string, Entry>()
   let p = cdOffset
   for (let idx = 0; idx < total; idx++) {
-    if (view.getUint32(p, true) !== SIG_CDH) {
+    // 切断された CD で DataView の RangeError（英語の内部メッセージ）を漏らさない
+    if (p + 46 > view.byteLength || view.getUint32(p, true) !== SIG_CDH) {
       throw new ZipError('invalid', '中央ディレクトリが壊れています')
     }
     const method = view.getUint16(p + 10, true)
@@ -161,7 +168,10 @@ export async function openZip(
     const entry = entries.get(name)
     if (!entry) throw new ZipError('invalid', `エントリが見つかりません: ${name}`)
 
-    if (view.getUint32(entry.localOffset, true) !== SIG_LFH) {
+    if (
+      entry.localOffset + 30 > view.byteLength ||
+      view.getUint32(entry.localOffset, true) !== SIG_LFH
+    ) {
       throw new ZipError('invalid', 'ローカルヘッダが壊れています')
     }
     // name/extra 長はローカルヘッダ自身から読む（中央ディレクトリと異なりうる）

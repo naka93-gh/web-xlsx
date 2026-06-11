@@ -1,4 +1,4 @@
-// ISO 8601 文字列の厳密パース（read 系で共有）
+// ISO 8601 文字列の厳密パース・整形（read 系で共有）
 
 /**
  * 文字列を ISO 8601 として厳密にパースする（不正・非対応形式は null）
@@ -37,4 +37,37 @@ export function parseIsoDate(text: string, utc = false): Date | null {
   }
 
   return null
+}
+
+/**
+ * `Date` を ISO 8601 文字列にする（{@link parseIsoDate} の逆）
+ *
+ * 時刻が 0:00:00.000 なら日付のみ（`YYYY-MM-DD`）、それ以外は秒まで
+ * （ミリ秒があれば `.sss` も）出す。`utc` でどちらの暦日・時刻を読むかを選ぶ
+ */
+export function formatIsoDate(date: Date, utc = false): string {
+  const pad = (n: number, w = 2) => String(n).padStart(w, '0')
+  const c = utc
+    ? {
+        y: date.getUTCFullYear(),
+        mo: date.getUTCMonth() + 1,
+        d: date.getUTCDate(),
+        h: date.getUTCHours(),
+        mi: date.getUTCMinutes(),
+        s: date.getUTCSeconds(),
+        ms: date.getUTCMilliseconds(),
+      }
+    : {
+        y: date.getFullYear(),
+        mo: date.getMonth() + 1,
+        d: date.getDate(),
+        h: date.getHours(),
+        mi: date.getMinutes(),
+        s: date.getSeconds(),
+        ms: date.getMilliseconds(),
+      }
+  const day = `${pad(c.y, 4)}-${pad(c.mo)}-${pad(c.d)}`
+  if (c.h === 0 && c.mi === 0 && c.s === 0 && c.ms === 0) return day
+  const time = `${pad(c.h)}:${pad(c.mi)}:${pad(c.s)}`
+  return c.ms === 0 ? `${day}T${time}` : `${day}T${time}.${pad(c.ms, 3)}`
 }
