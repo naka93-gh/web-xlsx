@@ -39,6 +39,8 @@ function cellXml(ref: string, value: Cell, style: number, utc: boolean): string 
   const s = style > 0 ? ` s="${style}"` : ''
   if (value === null || value === '') return `<c r="${ref}"${s}/>`
   if (value instanceof Date) {
+    // Invalid Date はシリアル値が NaN になり壊れた XML を出すため空セルにする（非有限数値と同じ扱い）
+    if (Number.isNaN(value.getTime())) return `<c r="${ref}"${s}/>`
     // Date はシリアル値なので表示書式が必須。渡された style より DATE_STYLE を優先する
     return `<c r="${ref}" s="${DATE_STYLE}"><v>${dateToSerial(value, { utc })}</v></c>`
   }

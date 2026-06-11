@@ -25,6 +25,10 @@ describe('cellXml の型別分岐', () => {
     expect(cellA2(Number.POSITIVE_INFINITY)).toBe('<c r="A2"/>')
   })
 
+  it('Invalid Date は空セル（<v>NaN</v> で xlsx を壊さない）', () => {
+    expect(cellA2(new Date('not a date'))).toBe('<c r="A2"/>')
+  })
+
   it('boolean は t="b" で 1 / 0', () => {
     expect(cellA2(true)).toBe('<c r="A2" t="b"><v>1</v></c>')
     expect(cellA2(false)).toBe('<c r="A2" t="b"><v>0</v></c>')
