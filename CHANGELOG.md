@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0
+
+第2引数の再設計、ヘッダー無しモードの追加、スキーマ検証の強化。
+
+- **破壊的変更**: `parse` / `parseFile` / `build` の第2引数を `{ schema?, options? }` に変更し、`schema` と `options` を分離した
+- `parse` / `parseFile` に `options.header: false` を追加した。ヘッダーを解決せず、各行を位置で取り込む `Cell[][]` で返す（`schema` とは型で排他）
+- ファイルエラーを 2 種追加した。スキーマの必須列がヘッダーに無ければ `missing-column`、`parseFile` の読み込み失敗は `read-failed` で返す
+- スキーマの型変換を厳密化した。`defaultValue` は列の `type` に対応する型に限定（外れるとコンパイルエラー）、`type: 'number'` は 10 進表記のみ受理、`type: 'string'` が日付セルを受けると ISO 8601 文字列になる
+
 ## 0.2.0
 
 日付の TZ 解釈オプションと堅牢性の強化。
