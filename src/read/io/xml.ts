@@ -6,6 +6,9 @@
  * - `open` … 開始タグ（`selfClosing` なら自己終了タグ）
  * - `text` … 要素間のテキスト（実体参照はデコード済み・空白は保持）
  * - `close` … 終了タグ
+ *
+ * 要素名 `name` は名前空間プレフィックスを剥がした local-name。
+ * 属性名（`attrs` のキー）はプレフィックス付きのまま。
  */
 export type XmlToken =
   | { type: 'open'; name: string; attrs: Record<string, string>; selfClosing: boolean }
@@ -40,6 +43,18 @@ export function decodeEntities(s: string): string {
 /** 空白文字か */
 function isSpace(ch: string): boolean {
   return ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r'
+}
+
+/**
+ * 要素名から名前空間プレフィックスを剥がし local-name を返す
+ *
+ * OOXML の namespace は任意プレフィックスに束縛可能（`x:sheetData` 等）。
+ * 要素照合を local-name で行うため open/close 双方の name に適用する。
+ * 属性名（`r:id` / `xml:space` 等）は付きで参照するため剥がさない。
+ */
+function localName(name: string): string {
+  const colon = name.indexOf(':')
+  return colon === -1 ? name : name.slice(colon + 1)
 }
 
 /** start 位置のタグ終端 `>` をクォートを考慮して探す（属性値内の `>` を誤検出しない） */
@@ -155,7 +170,7 @@ export function* tokenize(xml: string): Generator<XmlToken> {
     i = end + 1
 
     if (inner[0] === '/') {
-      yield { type: 'close', name: inner.slice(1).trim() }
+      yield { type: 'close', name: localName(inner.slice(1).trim()) }
       continue
     }
 
@@ -165,6 +180,6 @@ export function* tokenize(xml: string): Generator<XmlToken> {
       inner = inner.slice(0, -1)
     }
     const { name, attrs } = parseTag(inner)
-    yield { type: 'open', name, attrs, selfClosing }
+    yield { type: 'open', name: localName(name), attrs, selfClosing }
   }
 }

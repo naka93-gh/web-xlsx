@@ -32,4 +32,19 @@ describe('tokenize エッジ', () => {
     const [tok] = collect('<c x=1 y=2/>')
     expect(tok).toMatchObject({ attrs: { x: '1', y: '2' } })
   })
+
+  it('要素名は名前空間プレフィックスを剥がし local-name にする', () => {
+    expect(collect('<x:sheetData></x:sheetData>')).toEqual([
+      { type: 'open', name: 'sheetData', attrs: {}, selfClosing: false },
+      { type: 'close', name: 'sheetData' },
+    ])
+  })
+
+  it('属性名のプレフィックスは保持する（r:id / xml:space 等）', () => {
+    const [tok] = collect('<x:c r:id="rId1" xml:space="preserve"/>')
+    expect(tok).toMatchObject({
+      name: 'c',
+      attrs: { 'r:id': 'rId1', 'xml:space': 'preserve' },
+    })
+  })
 })
