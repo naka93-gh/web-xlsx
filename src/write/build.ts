@@ -26,6 +26,23 @@ export type BuildOptions = {
   utc?: boolean
 }
 
+/**
+ * build の第2引数
+ *
+ * 列順・ヘッダーを決める `schema` と、出力調整の `options`（{@link BuildOptions}）を
+ * 別キーに分けて渡す。どちらも省略できる
+ */
+export type BuildArgs = {
+  schema?: never
+  options?: BuildOptions
+}
+
+/** スキーマ付きの第2引数 */
+export type BuildArgsWithSchema<S extends Schema> = {
+  schema: S
+  options?: BuildOptions
+}
+
 /** unknown 値を Cell に寄せる（Cell 外の型は String 化、未入力は null） */
 function toCell(value: unknown): Cell {
   if (value === undefined || value === null) return null
@@ -78,23 +95,22 @@ function fromSchema(
  */
 export function build<S extends Schema>(
   rows: InferRow<S>[],
-  options: BuildOptions & { schema: S },
+  args: BuildArgsWithSchema<S>,
 ): Promise<Uint8Array>
 /**
  * 行データを xlsx バイト列に書き出す（スキーマ無し）
  *
  * 行のキーがヘッダー、列順は最初に現れた順
  */
-export function build(rows: Row[], options?: BuildOptions): Promise<Uint8Array>
+export function build(rows: Row[], args?: BuildArgs): Promise<Uint8Array>
 export async function build(
   rows: Record<string, unknown>[],
-  options: BuildOptions & { schema?: Schema } = {},
+  args: { schema?: Schema; options?: BuildOptions } = {},
 ): Promise<Uint8Array> {
+  const { schema, options = {} } = args
   const style = options.style ?? true
   const utc = options.utc ?? false
-  const { headers, matrix } = options.schema
-    ? fromSchema(rows, options.schema)
-    : fromRows(rows as Row[])
+  const { headers, matrix } = schema ? fromSchema(rows, schema) : fromRows(rows as Row[])
 
   const enc = new TextEncoder()
   const part = (name: string, xml: string): ZipEntry => ({ name, data: enc.encode(xml) })

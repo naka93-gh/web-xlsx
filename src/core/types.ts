@@ -265,10 +265,22 @@ export type ParseOptions = {
 }
 
 /**
- * スキーマ付きオプション（高レベル API 用）
+ * parse / parseFile の第2引数
+ *
+ * 型付け・検証の `schema` と、取り込み調整の `options`（{@link ParseOptions}）を
+ * 別キーに分けて渡す。どちらも省略できる
  */
-export type ParseOptionsWithSchema<S extends Schema> = ParseOptions & {
+export type ParseArgs = {
+  schema?: never
+  options?: ParseOptions
+}
+
+/**
+ * スキーマ付きの第2引数
+ *
+ * header:false（Cell[][]）と schema 検証は両立しないため、options から header を除く
+ */
+export type ParseArgsWithSchema<S extends Schema> = {
   schema: S
-  // header:false（配列 of 配列）と schema 検証は両立しないため型で排他にする
-  header?: never
+  options?: Omit<ParseOptions, 'header'>
 }

@@ -11,7 +11,7 @@ export { parse, parseFile } from './read/parse.js' // バイト列 / File・Blob
 // ───────────────────────────────────────────
 // オプション
 // ───────────────────────────────────────────
-export type { ParseOptions, ZipLimits } from './core/types.js' // parse の第 2 引数 / 解凍サイズ上限
+export type { ParseArgs, ParseArgsWithSchema, ParseOptions, ZipLimits } from './core/types.js' // parse の第2引数 / 取り込み options / 解凍サイズ上限
 
 // ───────────────────────────────────────────
 // スキーマ（型付き取込）

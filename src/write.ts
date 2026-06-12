@@ -11,7 +11,7 @@ export { build } from './write/build.js' // 行配列 → xlsx バイト列
 // ───────────────────────────────────────────
 // オプション
 // ───────────────────────────────────────────
-export type { BuildOptions } from './write/build.js' // build の第 2 引数
+export type { BuildArgs, BuildArgsWithSchema, BuildOptions } from './write/build.js' // build の第2引数 / 出力 options
 
 // ───────────────────────────────────────────
 // スキーマ（読み取りと共用）

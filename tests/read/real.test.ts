@@ -39,7 +39,7 @@ describe('実ファイル / employees.xlsx（型付き取込の主軸）', () =>
   })
 
   it('header:false でヘッダー行も含め矩形の Cell[][] を返す', async () => {
-    const result = await parse(fixture('employees'), { header: false })
+    const result = await parse(fixture('employees'), { options: { header: false } })
     expect(result.ok).toBe(true)
     if (!result.ok) return
     // ヘッダー行 + データ 3 行 = 4 行、全行が幅 5 の矩形
@@ -88,13 +88,13 @@ describe('実ファイル / multisheet.xlsx（シート選択）', () => {
   })
 
   it('名前でシートを選ぶ（費用）', async () => {
-    const result = await parse(fixture('multisheet'), { sheet: '費用' })
+    const result = await parse(fixture('multisheet'), { options: { sheet: '費用' } })
     expect(result.ok && result.data).toHaveLength(1)
     if (result.ok) expect(result.data[0]?.金額).toBe(50)
   })
 
   it('index でシートを選ぶ（2 → Summary）', async () => {
-    const result = await parse(fixture('multisheet'), { sheet: 2 })
+    const result = await parse(fixture('multisheet'), { options: { sheet: 2 } })
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.data[0]?.項目).toBe('利益')
@@ -102,7 +102,7 @@ describe('実ファイル / multisheet.xlsx（シート選択）', () => {
   })
 
   it('存在しないシート名は sheet-not-found', async () => {
-    const result = await parse(fixture('multisheet'), { sheet: '無い' })
+    const result = await parse(fixture('multisheet'), { options: { sheet: '無い' } })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('sheet-not-found')
   })

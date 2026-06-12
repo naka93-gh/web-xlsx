@@ -25,8 +25,8 @@ describe('build → parse ラウンドトリップ（スキーマ無し）', () 
 
   it('utc:true で UTC 基準の日付を往復できる', async () => {
     const hire = new Date(Date.UTC(2020, 0, 15))
-    const bytes = await build([{ 入社日: hire }], { utc: true })
-    const result = await parse(bytes, { utc: true })
+    const bytes = await build([{ 入社日: hire }], { options: { utc: true } })
+    const result = await parse(bytes, { options: { utc: true } })
     expect(result.ok).toBe(true)
     if (!result.ok) return
     const back = result.data[0]?.入社日
@@ -75,14 +75,14 @@ describe('build → parse ラウンドトリップ（スキーマ）', () => {
 
 describe('build オプション', () => {
   it('style:false でも有効な xlsx として読み戻せる', async () => {
-    const bytes = await build([{ x: 'a' }], { style: false })
+    const bytes = await build([{ x: 'a' }], { options: { style: false } })
     const result = await parse(bytes)
     expect(result.ok).toBe(true)
   })
 
   it('sheetName を指定したシートから読める', async () => {
-    const bytes = await build([{ x: 'a' }], { sheetName: '社員一覧' })
-    const result = await parse(bytes, { sheet: '社員一覧' })
+    const bytes = await build([{ x: 'a' }], { options: { sheetName: '社員一覧' } })
+    const result = await parse(bytes, { options: { sheet: '社員一覧' } })
     expect(result.ok).toBe(true)
   })
 

@@ -2,8 +2,9 @@ import type {
   Cell,
   FileError,
   InferRow,
+  ParseArgs,
+  ParseArgsWithSchema,
   ParseOptions,
-  ParseOptionsWithSchema,
   ParseResult,
   Row,
   Schema,
@@ -146,20 +147,20 @@ function toRow(row: SheetRow): Row {
 // オーバーロードは「具体的 → 一般的」の順に並べる。既定の Row オーバーロードは
 // options が任意の ParseOptions を受けるため最も緩い。header:false は header が
 // ParseOptions のメンバなので、Row より前に置かないと Row 側へ吸われる
-// （schema は schema が ParseOptions に無く excess-property で弾かれるため順序自由）。
+// （schema は ParseArgsWithSchema が options から header を除くため排他になる）。
 /**
- * `header: false` でヘッダーを解決せず、行を `Cell[][]`（配列 of 配列）で返す
+ * `options.header: false` でヘッダーを解決せず、行を `Cell[][]`（配列 of 配列）で返す
  * 位置で取り込むモード。`schema` とは併用できない
  *
  * @example
  * ```ts
- * const result = await parse(bytes, { header: false })
+ * const result = await parse(bytes, { options: { header: false } })
  * if (result.ok) console.log(result.data[0][0]) // 1行目1列目
  * ```
  */
 export function parse(
   data: ArrayBuffer | Uint8Array,
-  options: ParseOptions & { header: false; schema?: never },
+  args: { schema?: never; options: ParseOptions & { header: false } },
 ): Promise<ParseResult<Cell[]>>
 /**
  * スキーマを渡すと各列を検証・型付けし、行を {@link InferRow} 型で返す
@@ -175,7 +176,7 @@ export function parse(
  */
 export function parse<S extends Schema>(
   data: ArrayBuffer | Uint8Array,
-  options: ParseOptionsWithSchema<S>,
+  args: ParseArgsWithSchema<S>,
 ): Promise<ParseResult<InferRow<S>>>
 /**
  * xlsx のバイト列をパースして行の配列を返す
@@ -191,20 +192,18 @@ export function parse<S extends Schema>(
  * if (result.ok) console.log(result.data)
  * ```
  */
-export function parse(
-  data: ArrayBuffer | Uint8Array,
-  options?: ParseOptions,
-): Promise<ParseResult<Row>>
+export function parse(data: ArrayBuffer | Uint8Array, args?: ParseArgs): Promise<ParseResult<Row>>
 export async function parse(
   data: ArrayBuffer | Uint8Array,
-  options: ParseOptions & { schema?: Schema } = {},
+  args: { schema?: Schema; options?: ParseOptions } = {},
 ): Promise<ParseResult<Row | Cell[]>> {
+  const { schema, options = {} } = args
   const result = await readWorkbookSheet(data, options)
   if (!result.ok) return result
   if ('arrays' in result) return { ok: true, data: result.arrays, errors: [] }
 
-  if (options.schema) {
-    const missing = findMissingRequiredHeaders(options.schema, result.sheet.headers)
+  if (schema) {
+    const missing = findMissingRequiredHeaders(schema, result.sheet.headers)
     if (missing.length > 0) {
       return {
         ok: false,
@@ -214,7 +213,7 @@ export async function parse(
         },
       }
     }
-    const { data, errors } = applySchema(result.sheet.rows, options.schema, options.utc ?? false)
+    const { data, errors } = applySchema(result.sheet.rows, schema, options.utc ?? false)
     return { ok: true, data: data as Row[], errors }
   }
 
@@ -223,18 +222,18 @@ export async function parse(
 
 // オーバーロード順は {@link parse} と同じ理由で「header:false → schema → 既定」にする
 /**
- * ヘッダー無し（`Cell[][]`）— {@link parse} の `header: false` と同じ
+ * ヘッダー無し（`Cell[][]`）— {@link parse} の `options.header: false` と同じ
  */
 export function parseFile(
   file: File | Blob,
-  options: ParseOptions & { header: false; schema?: never },
+  args: { schema?: never; options: ParseOptions & { header: false } },
 ): Promise<ParseResult<Cell[]>>
 /**
  * スキーマ付き — 検証・型付けは {@link parse} と同じ
  */
 export function parseFile<S extends Schema>(
   file: File | Blob,
-  options: ParseOptionsWithSchema<S>,
+  args: ParseArgsWithSchema<S>,
 ): Promise<ParseResult<InferRow<S>>>
 /**
  * `<input type="file">` で得た `File`（または `Blob`）から xlsx を読む
@@ -251,10 +250,10 @@ export function parseFile<S extends Schema>(
  * }
  * ```
  */
-export function parseFile(file: File | Blob, options?: ParseOptions): Promise<ParseResult<Row>>
+export function parseFile(file: File | Blob, args?: ParseArgs): Promise<ParseResult<Row>>
 export async function parseFile(
   file: File | Blob,
-  options: ParseOptions & { schema?: Schema } = {},
+  args: { schema?: Schema; options?: ParseOptions } = {},
 ): Promise<ParseResult<Row | Cell[]>> {
   let buffer: ArrayBuffer
   try {
@@ -263,5 +262,9 @@ export async function parseFile(
     // ファイル破損（invalid-xlsx）とは別事象なので読み込み失敗として区別する
     return { ok: false, error: { code: 'read-failed', message: 'ファイルを読み込めませんでした' } }
   }
-  return parse(buffer, options)
+  // schema の有無で型付きオーバーロードへ振り分ける（impl 同士はオーバーロードを経由する）。
+  // exactOptionalPropertyTypes 下では options: undefined を明示できないためキーごと省く
+  const { schema, options } = args
+  if (schema) return parse(buffer, options ? { schema, options } : { schema })
+  return options ? parse(buffer, { options }) : parse(buffer)
 }

@@ -38,12 +38,12 @@ describe('parse（低レベル E2E）', () => {
   })
 
   it('sheet オプション（名前指定）', async () => {
-    const result = await parse(await xlsx(), { sheet: 'Sheet1' })
+    const result = await parse(await xlsx(), { options: { sheet: 'Sheet1' } })
     expect(result.ok && result.data).toHaveLength(2)
   })
 
   it('存在しないシートは sheet-not-found', async () => {
-    const result = await parse(await xlsx(), { sheet: '無い' })
+    const result = await parse(await xlsx(), { options: { sheet: '無い' } })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('sheet-not-found')
   })
@@ -55,7 +55,7 @@ describe('parse（低レベル E2E）', () => {
   })
 
   it('不正な range は invalid-range（ファイル破損と区別する）', async () => {
-    const result = await parse(await xlsx(), { range: 'A1:D' })
+    const result = await parse(await xlsx(), { options: { range: 'A1:D' } })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('invalid-range')
   })
@@ -105,7 +105,7 @@ describe('parse（低レベル E2E）', () => {
 
   it('limits オプションが openZip に渡り上限超過で too-large', async () => {
     // 既定上限なら通る正規 xlsx を、極小上限で弾けることで橋渡しを確認する
-    const result = await parse(await xlsx(), { limits: { maxTotalBytes: 1 } })
+    const result = await parse(await xlsx(), { options: { limits: { maxTotalBytes: 1 } } })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('too-large')
   })
@@ -146,7 +146,7 @@ describe('parseFile', () => {
 
 describe('parse（header:false / 配列 of 配列）', () => {
   it('ヘッダーを解決せずヘッダー行も含めて Cell[][] で返す', async () => {
-    const result = await parse(await xlsx(), { header: false })
+    const result = await parse(await xlsx(), { options: { header: false } })
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.errors).toEqual([])
@@ -160,7 +160,7 @@ describe('parse（header:false / 配列 of 配列）', () => {
   })
 
   it('戻り値の data は Cell[][] 型に推論される', async () => {
-    const result = await parse(await xlsx(), { header: false })
+    const result = await parse(await xlsx(), { options: { header: false } })
     if (result.ok) {
       // Cell[][] へ代入できる = Row[] ではない（ヘッダー無しの戻り型）
       const data: Cell[][] = result.data
@@ -171,12 +171,12 @@ describe('parse（header:false / 配列 of 配列）', () => {
   it('schema との併用は型エラー（排他）', async () => {
     const schema = { 名前: { prop: 'name', type: 'string' } } satisfies Schema
     // @ts-expect-error header:false と schema は併用できない
-    await parse(await xlsx(), { header: false, schema })
+    await parse(await xlsx(), { schema, options: { header: false } })
   })
 
   it('parseFile でも header:false が使える', async () => {
     const blob = new Blob([await xlsx()])
-    const result = await parseFile(blob, { header: false })
+    const result = await parseFile(blob, { options: { header: false } })
     expect(result.ok && result.data[0]).toEqual(['名前', '年齢', '入社日'])
   })
 })
