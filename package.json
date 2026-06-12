@@ -47,7 +47,12 @@
   "engines": {
     "node": ">=20.12.0"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.34.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "prepare": "tsc -p tsconfig.build.json",
