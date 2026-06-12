@@ -1,95 +1,79 @@
 # web-xlsx
 
-xlsx を TypeScript で読み書きするライブラリ。Excel ファイルを読み込んで中身を値として扱うことと、データを Excel ファイルとして書き出すことができる。読み取りだけ、書き出しだけ、どちらの用途でも使える。
+[![npm version](https://img.shields.io/npm/v/web-xlsx.svg)](https://www.npmjs.com/package/web-xlsx)
+[![bundle size](https://deno.bundlejs.com/badge?q=web-xlsx,web-xlsx/write)](https://bundlejs.com/?q=web-xlsx,web-xlsx/write)
+[![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](https://www.npmjs.com/package/web-xlsx?activeTab=dependencies)
+[![types](https://img.shields.io/npm/types/web-xlsx.svg)](https://www.npmjs.com/package/web-xlsx)
+[![license](https://img.shields.io/npm/l/web-xlsx.svg)](./LICENSE)
 
-ブラウザで動かせるデモ: **[naka93-gh.github.io/web-xlsx](https://naka93-gh.github.io/web-xlsx/)**（読み込み・書き出しとも、処理はすべてブラウザ内で完結）
+ブラウザ・Node に対応した TypeScript 製の xlsx read/write ライブラリ。
+
+[デモページはこちら。](https://naka93-gh.github.io/web-xlsx/)
 
 ## 特徴
 
-- 依存ゼロでバンドルサイズが小さい
-- スキーマを指定すると型付きデータとしてパースできる
-- 読み取りに使ったスキーマをそのまま書き出しにも使える
-- Result 型を採用し、エラーを詳細に表現できる
+- 外部依存なしの小バンドル
+- スキーマ指定で型付きにパース
+- read/write で同じスキーマを使用
+- Result 型による戻り値統一
 
 ## インストール
 
 ```bash
+npm install web-xlsx
 pnpm add web-xlsx
+bun add web-xlsx
 ```
 
-## 動作環境
+- ESM 専用
+- Node.js 20.12 以上（21.2+ / 22+ も可）
+- ブラウザは deflate-raw 対応の現行版
 
-ESM 専用。解凍/圧縮に `DecompressionStream('deflate-raw')` を使うため、**Node.js 20.12 以上**（21.2+ / 22+ も可）、ブラウザは Compression Streams（deflate-raw）対応の現行版が必要。polyfill は同梱しない。
+## Quick Start
 
-CommonJS のコードから使う場合は、動的 `import()`、または ESM を `require()` できる Node 20.19+ / 22.12+ を使う。
+各 API とオプションの詳細は [docs/api/](./docs/api/README.md) を参照。
 
-## 使い方
-
-列ごとに型・必須・既定値・追加検証をスキーマで定義すると、検証済みの型付き行が返る。検証に通らなかった行は `data` から外れ、行番号付きで `errors` に入る。これが主な使い方。
+### read
 
 ```ts
-import { parseFile, type Schema } from 'web-xlsx'
+import { parseFile, type Schema } from "web-xlsx";
 
 const schema = {
-  名前: { prop: 'name', type: 'string', required: true },
-  年齢: { prop: 'age', type: 'number' },
-  入社日: { prop: 'hireDate', type: 'date' },
-} satisfies Schema
+  名前: { prop: "name", type: "string", required: true },
+  年齢: { prop: "age", type: "number" },
+  入社日: { prop: "hireDate", type: "date" },
+} satisfies Schema;
 
-const result = await parseFile(file, { schema })
+const result = await parseFile(file, { schema });
 if (result.ok) {
-  console.log(result.data) // { name: string; age: number|null; hireDate: Date|null }[]
-  for (const e of result.errors) console.warn(`${e.row}行目 ${e.column}: ${e.message}`)
+  console.log(result.data);
+  // { name: string; age: number|null; hireDate: Date|null }[]
 }
 ```
 
-`type` は `'string' | 'number' | 'boolean' | 'date'` から指定する。
-
-### スキーマなしで読む
-
-スキーマを渡さなければ、セルは Excel 上の型（文字列・数値・真偽・日付）のまま素の行として返る。型付けは不要で中身だけ見たいときに使う。
+### write
 
 ```ts
-import { parseFile } from 'web-xlsx'
+import { build } from "web-xlsx/write";
 
-const result = await parseFile(file)
-if (result.ok) console.log(result.data)
-// [{ 名前: '田中太郎', 年齢: 30, 入社日: Date, 在籍: true }, ...]
+// read と同じスキーマで書き出せる
+const bytes = await build(result.data, { schema });
 ```
-
-`ArrayBuffer` / `Uint8Array` からは `parse` を使う（解凍に `DecompressionStream` を使うため非同期）。
-
-## 書き出し
-
-行データを xlsx のバイト列（`Uint8Array`）に書き出す。読み取りに使ったスキーマをそのまま渡せて、キーがヘッダー、`prop` で各行の値を引く。
-
-```ts
-import { build } from 'web-xlsx/write'
-
-const bytes = await build(rows, { schema })
-```
-
-スキーマを渡さなければ、行のキーがそのままヘッダーになり、列順は最初に現れた順になる。
-
-```ts
-const bytes = await build([
-  { 名前: '田中太郎', 年齢: 30 },
-  { 名前: '鈴木花子', 年齢: 25 },
-])
-```
-
-書き出しは `web-xlsx/write` から import する。読むだけならこのコードはバンドルに含まれない。
-
-各 API とオプションの詳細は [docs/API.md](docs/API.md) を参照。
 
 ## 制限事項
 
-- 数式評価とスタイル編集は扱わない。読み取り時、数式セルはキャッシュ値を読む。書き出しは 1 シートの素の表を出力する（数式・複数シートなし）。
-- 日付は既定でローカルの壁時計としてシリアル値と `Date` を相互変換する（`getFullYear()` 等で暦日を読む前提。読み書きで対称なので TZ に依らず往復は一致する）。`utc: true` を渡すと UTC 固定になり `getUTCFullYear()` / `toISOString()` がその暦日になる（読み取り・書き出しで同じ値を使うこと）。スキーマ `type: 'date'` で文字列セルを受ける場合は ISO 8601（`YYYY-MM-DD` / `YYYY-MM-DDThh:mm[:ss]`）のみ受理し、それ以外は行エラーにする。
-- ヘッダー行に同名の列があると列対応が一意に決まらないため、`duplicate-header` で読み取りを拒否する（黙って後勝ち上書きしない）。
-- ZIP64・暗号化ブックには未対応。
-- ストリーミング、複数シートの一括読み込み、結合セルの値展開は未対応。
-- `1e21` のような極端に大きい/小さい数値は書き出し時に指数表記になりうる（Excel は読めるが保存テキストは変わる）。
+- read: 数式は評価しない
+- read: ヘッダーに同名の列があると読み取りを拒否する
+- write: 1 シートの素の表のみ
+- write: 極端に大きい/小さい数値は指数表記になりうる
+- read/write: 日付は既定でローカル時刻として扱う
+
+## 未対応
+
+- read: 複数シートの一括読み込み
+- read: 結合セルの展開
+- read: ZIP64・暗号化ブック
+- read/write: ストリーミング
 
 ## ライセンス
 
