@@ -212,7 +212,8 @@ export function readSheet(
   const rows: SheetRow[] = []
   for (const r of present) {
     if (r.rowNum <= headerRowNum) continue
-    const cells: Record<string, SheetCell> = {}
+    // __proto__ 等の列名が prototype セッターに吸われて消えるのを防ぐ
+    const cells: Record<string, SheetCell> = Object.create(null)
     let hasValue = false
     for (const { col, key } of headerCols) {
       const raw = r.cells.get(col)

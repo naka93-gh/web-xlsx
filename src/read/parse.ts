@@ -137,7 +137,8 @@ async function readWorkbookSheet(
 
 /** SheetRow を低レベルの Row（値のみ）へ変換する */
 function toRow(row: SheetRow): Row {
-  const out: Row = {}
+  // __proto__ 等の列名が prototype セッターに吸われて消えるのを防ぐ
+  const out: Row = Object.create(null)
   for (const key of Object.keys(row.cells)) {
     out[key] = row.cells[key]?.value ?? null
   }

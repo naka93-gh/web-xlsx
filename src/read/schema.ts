@@ -63,7 +63,8 @@ export function applySchema(
   const errors: RowError[] = []
 
   for (const sr of rows) {
-    const out: Record<string, Cell> = {}
+    // __proto__ 等の prop が prototype セッターに吸われて消えるのを防ぐ
+    const out: Record<string, Cell> = Object.create(null)
     const rowErrors: RowError[] = []
 
     for (const [header, column] of columns) {

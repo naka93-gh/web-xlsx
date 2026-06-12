@@ -91,6 +91,49 @@ describe('parse（低レベル E2E）', () => {
     }
   })
 
+  it('__proto__ / constructor 列名でも行データが消えない（prototype セッター回避）', async () => {
+    const bytes = await buildXlsx({
+      '_rels/.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+      'xl/workbook.xml': `<workbook><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+      'xl/_rels/workbook.xml.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+      // 信頼できないアップロードに __proto__ / constructor というヘッダーが混ざるケース
+      'xl/worksheets/sheet1.xml': `<worksheet><sheetData>
+        <row r="1"><c r="A1" t="inlineStr"><is><t>__proto__</t></is></c><c r="B1" t="inlineStr"><is><t>constructor</t></is></c></row>
+        <row r="2"><c r="A2" t="inlineStr"><is><t>x</t></is></c><c r="B2" t="inlineStr"><is><t>y</t></is></c></row>
+      </sheetData></worksheet>`,
+    })
+    const result = await parse(bytes)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.data).toHaveLength(1)
+    const row = result.data[0] as Record<string, Cell>
+    // own プロパティとして値が残り、空行スキップで消えない
+    expect(Object.keys(row).sort()).toEqual(['__proto__', 'constructor'])
+    const protoKey = '__proto__'
+    const ctorKey = 'constructor'
+    expect(row[protoKey]).toBe('x')
+    expect(row[ctorKey]).toBe('y')
+  })
+
+  it('schema の prop が __proto__ でも結果に残る', async () => {
+    const bytes = await buildXlsx({
+      '_rels/.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+      'xl/workbook.xml': `<workbook><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+      'xl/_rels/workbook.xml.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+      'xl/worksheets/sheet1.xml': `<worksheet><sheetData>
+        <row r="1"><c r="A1" t="inlineStr"><is><t>名前</t></is></c></row>
+        <row r="2"><c r="A2" t="inlineStr"><is><t>Alice</t></is></c></row>
+      </sheetData></worksheet>`,
+    })
+    const schema = { 名前: { prop: '__proto__', type: 'string' } } satisfies Schema
+    const result = await parse(bytes, { schema })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const row = result.data[0] as Record<string, Cell>
+    const protoKey = '__proto__'
+    expect(row[protoKey]).toBe('Alice')
+  })
+
   it('ZIP は開けるが中身破損（中央ディレクトリ不正）は invalid-xlsx', async () => {
     // EOCD は見つかるが cdOffset 先に CDH シグネチャが無い ZIP を組む
     const bytes = new Uint8Array(8 + 22) // [壊れた CD 領域][EOCD]
