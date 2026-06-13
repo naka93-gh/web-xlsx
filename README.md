@@ -56,8 +56,11 @@ if (result.ok) {
 ```ts
 import { build } from "web-xlsx/write";
 
-// read と同じスキーマで書き出せる
-const bytes = await build(result.data, { schema });
+// read と同じスキーマで書き出せる（戻り値は read と同じ Result）
+const written = await build(result.data, { schema });
+if (written.ok) {
+  console.log(written.data); // Uint8Array
+}
 ```
 
 ## 制限事項

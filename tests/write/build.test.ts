@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import type { Schema } from '../../src/core/types.js'
+import type { BuildResult, Schema } from '../../src/core/types.js'
 import { parse } from '../../src/read/parse.js'
 import { build } from '../../src/write/build.js'
+
+/** build の Result から成功時のバイト列を取り出す（失敗は即 throw してテストを落とす） */
+async function buildOk(result: Promise<BuildResult>): Promise<Uint8Array> {
+  const r = await result
+  if (!r.ok) throw new Error(`build 失敗: ${r.error.code} ${r.error.message}`)
+  return r.data
+}
 
 describe('build → parse ラウンドトリップ（スキーマ無し）', () => {
   it('文字列・数値・真偽・日付を書いて読み戻せる', async () => {
@@ -9,7 +16,7 @@ describe('build → parse ラウンドトリップ（スキーマ無し）', () 
       { 名前: '田中太郎', 年齢: 30, 在籍: true, 入社日: new Date(2020, 0, 15) },
       { 名前: '鈴木花子', 年齢: 25, 在籍: false, 入社日: new Date(2021, 5, 1) },
     ]
-    const bytes = await build(rows)
+    const bytes = await buildOk(build(rows))
     const result = await parse(bytes)
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -25,7 +32,7 @@ describe('build → parse ラウンドトリップ（スキーマ無し）', () 
 
   it('utc:true で UTC 基準の日付を往復できる', async () => {
     const hire = new Date(Date.UTC(2020, 0, 15))
-    const bytes = await build([{ 入社日: hire }], { options: { utc: true } })
+    const bytes = await buildOk(build([{ 入社日: hire }], { options: { utc: true } }))
     const result = await parse(bytes, { options: { utc: true } })
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -36,7 +43,7 @@ describe('build → parse ラウンドトリップ（スキーマ無し）', () 
   })
 
   it('列順は最初に現れたキー順になる', async () => {
-    const bytes = await build([{ b: 1, a: 2 }])
+    const bytes = await buildOk(build([{ b: 1, a: 2 }]))
     const result = await parse(bytes)
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -44,7 +51,7 @@ describe('build → parse ラウンドトリップ（スキーマ無し）', () 
   })
 
   it('null セルは空として読み戻る', async () => {
-    const bytes = await build([{ 名前: '佐藤', メモ: null }])
+    const bytes = await buildOk(build([{ 名前: '佐藤', メモ: null }]))
     const result = await parse(bytes)
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -60,9 +67,9 @@ describe('build → parse ラウンドトリップ（スキーマ）', () => {
   } satisfies Schema
 
   it('スキーマで書いてスキーマで読み戻すと型が保たれる', async () => {
-    const bytes = await build([{ name: '山田', age: 42, hireDate: new Date(2019, 2, 10) }], {
-      schema,
-    })
+    const bytes = await buildOk(
+      build([{ name: '山田', age: 42, hireDate: new Date(2019, 2, 10) }], { schema }),
+    )
     const result = await parse(bytes, { schema })
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -72,30 +79,34 @@ describe('build → parse ラウンドトリップ（スキーマ）', () => {
     expect(result.data[0]?.hireDate).toBeInstanceOf(Date)
   })
 
-  it('prop が重複するスキーマは throw する（同じソース値の複製を防ぐ）', async () => {
+  it('prop が重複するスキーマは ok:false（invalid-option）を返す（同じソース値の複製を防ぐ）', async () => {
     const dup = {
       氏名: { prop: 'name', type: 'string' },
       名前: { prop: 'name', type: 'string' },
     } satisfies Schema
-    await expect(build([{ name: '山田' }], { schema: dup })).rejects.toThrow(/prop が重複/)
+    const result = await build([{ name: '山田' }], { schema: dup })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.code).toBe('invalid-option')
+    expect(result.error.message).toMatch(/prop が重複/)
   })
 })
 
 describe('build オプション', () => {
   it('style:false でも有効な xlsx として読み戻せる', async () => {
-    const bytes = await build([{ x: 'a' }], { options: { style: false } })
+    const bytes = await buildOk(build([{ x: 'a' }], { options: { style: false } }))
     const result = await parse(bytes)
     expect(result.ok).toBe(true)
   })
 
   it('sheetName を指定したシートから読める', async () => {
-    const bytes = await build([{ x: 'a' }], { options: { sheetName: '社員一覧' } })
+    const bytes = await buildOk(build([{ x: 'a' }], { options: { sheetName: '社員一覧' } }))
     const result = await parse(bytes, { options: { sheet: '社員一覧' } })
     expect(result.ok).toBe(true)
   })
 
   it('前後の空白を含む文字列が保持される', async () => {
-    const bytes = await build([{ s: '  spaced  ' }])
+    const bytes = await buildOk(build([{ s: '  spaced  ' }]))
     const result = await parse(bytes)
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -107,7 +118,7 @@ describe('build オプション', () => {
     const rows = [{ id: 90071992547409921n, meta: { a: 1 } }] as unknown as Parameters<
       typeof build
     >[0]
-    const bytes = await build(rows)
+    const bytes = await buildOk(build(rows))
     const result = await parse(bytes)
     expect(result.ok).toBe(true)
     if (!result.ok) return

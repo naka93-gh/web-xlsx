@@ -1,7 +1,7 @@
 // 書き出しオーケストレーション（行 → セル → XML パーツ → ZIP → bytes）
 
 import { findDuplicateProp } from '../core/schema.js'
-import type { Cell, InferRow, Row, Schema } from '../core/types.js'
+import type { BuildResult, Cell, InferRow, Row, Schema } from '../core/types.js'
 import { buildZip, type ZipEntry } from './io/zip.js'
 import { sheetXml } from './ooxml/sheet.js'
 import { stylesXml } from './ooxml/styles.js'
@@ -110,25 +110,31 @@ function fromSchema(
 export function build<S extends Schema>(
   rows: InferRow<S>[],
   args: BuildArgsWithSchema<S>,
-): Promise<Uint8Array>
+): Promise<BuildResult>
 /**
  * 行データを xlsx バイト列に書き出す（スキーマ無し）
  *
  * 行のキーがヘッダー、列順は最初に現れた順
  */
-export function build(rows: Row[], args?: BuildArgs): Promise<Uint8Array>
+export function build(rows: Row[], args?: BuildArgs): Promise<BuildResult>
 export async function build(
   rows: Record<string, unknown>[],
   args: { schema?: Schema; options?: BuildOptions } = {},
-): Promise<Uint8Array> {
+): Promise<BuildResult> {
   const { schema, options = {} } = args
 
-  // スキーマ付きは prop 重複を設定ミスとして弾く
+  // スキーマ付きは prop 重複を設定ミスとして弾く（read の入口検査と対称に Result で返す）
   // 複数列が同じ prop だと同じソース値が複数列に複製される
   if (schema) {
     const dupProp = findDuplicateProp(schema)
     if (dupProp !== undefined) {
-      throw new Error(`スキーマの prop が重複しています: "${dupProp}"`)
+      return {
+        ok: false,
+        error: {
+          code: 'invalid-option',
+          message: `スキーマの prop が重複しています: "${dupProp}"`,
+        },
+      }
     }
   }
 
@@ -141,7 +147,7 @@ export async function build(
   const enc = new TextEncoder()
   const part = (name: string, xml: string): ZipEntry => ({ name, data: enc.encode(xml) })
 
-  return buildZip([
+  const data = await buildZip([
     part('[Content_Types].xml', contentTypesXml()),
     part('_rels/.rels', rootRelsXml()),
     part('xl/workbook.xml', workbookXml(options.sheetName ?? 'Sheet1')),
@@ -149,4 +155,5 @@ export async function build(
     part('xl/styles.xml', stylesXml()),
     part('xl/worksheets/sheet1.xml', sheetXml(headers, matrix, { style, utc })),
   ])
+  return { ok: true, data }
 }

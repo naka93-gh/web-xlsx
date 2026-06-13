@@ -105,6 +105,17 @@ export type ParseResult<T> =
   | { ok: false; error: FileError }
   | { ok: true; data: T[]; errors: RowError[] }
 
+/**
+ * 書き出し結果 — read の {@link ParseResult} と対称の Result 型
+ *
+ * - `ok: false` … 書き出せない（スキーマの prop 重複等の設定ミス。{@link FileError}）
+ * - `ok: true` … `data` は xlsx のバイト列
+ *
+ * write は行単位の検証を持たないため `errors` は無い。read と同じく、失敗は
+ * 例外でなく戻り値で扱う（`error` の型は read と共通の {@link FileError}）
+ */
+export type BuildResult = { ok: false; error: FileError } | { ok: true; data: Uint8Array }
+
 // ───────────────────────────────────────────
 // スキーマ（列定義と行型の推論）
 // ───────────────────────────────────────────

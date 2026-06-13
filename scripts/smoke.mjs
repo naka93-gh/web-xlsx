@@ -7,8 +7,9 @@ import { parse } from '../dist/index.js'
 import { build } from '../dist/write.js'
 
 const rows = [{ 名前: 'Alice', 年齢: 30, 入社日: new Date(2020, 0, 15) }]
-const bytes = await build(rows)
-const result = await parse(bytes)
+const built = await build(rows)
+if (!built.ok) throw new Error(`build 失敗: ${built.error.code} ${built.error.message}`)
+const result = await parse(built.data)
 
 if (!result.ok) throw new Error(`parse 失敗: ${result.error.code} ${result.error.message}`)
 const r0 = result.data[0]

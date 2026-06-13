@@ -19,6 +19,7 @@ export type { BuildArgs, BuildArgsWithSchema, BuildOptions } from './write/build
 export type { Schema, Column, ColumnType, InferRow } from './core/types.js' // 列定義と行型の推論
 
 // ───────────────────────────────────────────
-// 値
+// 結果・値
 // ───────────────────────────────────────────
-export type { Row, Cell } from './core/types.js' // 行 / セル値
+export type { BuildResult, Row, Cell } from './core/types.js' // 返り値 / 行 / セル値
+export type { FileError, FileErrorCode } from './core/types.js' // 書き出し失敗（read と共通）
