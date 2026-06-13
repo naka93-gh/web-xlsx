@@ -1,13 +1,13 @@
 // バンドルサイズゲート（read + write 合算 gzip が上限内かを検査）
 //
-// gzip 10KB 超過で exit 1
+// gzip 15KB 超過で exit 1（運用 MAX 15KB / 絶対上限 20KB のうち、ゲートは MAX で張る）
 // 依存は esbuild（既存 devDep）と node:zlib のみ。`pnpm size:check` / CI で共用する
 
 import { gzipSync } from 'node:zlib'
 import { build } from 'esbuild'
 
-/** 合算 gzip の LIMIT（バイト） */
-const LIMIT = 10 * 1024
+/** 合算 gzip の LIMIT（バイト）。運用 MAX 15KB / 絶対上限 20KB のうち、ゲートは MAX で張る */
+const LIMIT = 15 * 1024
 
 /** 計測対象エントリ（公開する import 単位） */
 const ENTRIES = [

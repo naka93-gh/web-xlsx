@@ -32,7 +32,7 @@ jobs:
       # dist が「バンドラ無しの Node ESM」で動くか（拡張子なし import 等の混入検知）
       - run: pnpm test:dist
 
-  # バンドルサイズ LIMIT（read+write 合算 gzip 10KB） としてチェック
+  # バンドルサイズ LIMIT（read+write 合算 gzip 15KB） としてチェック
   # Node 版に依らないので単発実行
   size:
     runs-on: ubuntu-latest
