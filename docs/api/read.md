@@ -65,7 +65,7 @@ if (result.ok) {
 | オプション      | 既定                    | 説明                                                                                                           |
 | --------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `sheet`         | 先頭シート              | 読むシートを名前または 0 始まりの index で指定                                                                 |
-| `headerRow`     | 最初の非空行            | ヘッダー行の行番号（1 始まり）                                                                                 |
+| `headerRow`     | 最初の非空行            | ヘッダー行の行番号（1 始まり）。0 以下・非整数は `invalid-option`                                              |
 | `range`         | 自動                    | データ範囲を限定。`"A1:D100"`（矩形）/ `"A:D"`（列）/ `"2:100"`（行）。不正なら `invalid-range`                |
 | `skipEmptyRows` | `true`                  | 空行を読み飛ばす                                                                                               |
 | `header`        | （ヘッダーあり）        | `false` でヘッダーを解決せず行を `Cell[][]` で返す。`schema` 併用不可・`headerRow` 無視                        |
@@ -94,6 +94,7 @@ if (!result.ok) {
 | `invalid-xlsx`            | 必要なパーツ（workbook / sheet 等）が欠落、または中身が壊れている       |
 | `sheet-not-found`         | 指定したシートが無い                                                    |
 | `invalid-range`           | `range` オプションの形式が不正                                          |
+| `invalid-option`          | オプション/スキーマの指定値が不正（`headerRow` の 0・非整数、スキーマの `prop` 重複） |
 | `duplicate-header`        | ヘッダー列名が重複し、列の対応が一意に決まらない                        |
 | `missing-column`          | スキーマの必須列（`required` かつ `defaultValue` 無し）がヘッダーに無い |
 | `unsupported-environment` | `DecompressionStream` 非対応                                            |

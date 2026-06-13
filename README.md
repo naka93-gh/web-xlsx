@@ -64,9 +64,11 @@ const bytes = await build(result.data, { schema });
 
 - read: 数式は評価しない
 - read: ヘッダーに同名の列があると読み取りを拒否する
+- read: `type: 'number'` 列が日付書式のセルを受けると「数値ではありません」になる（日付は `type: 'date'` で受ける）
 - write: 1 シートの素の表のみ
 - write: 極端に大きい/小さい数値は指数表記になりうる
 - read/write: 日付は既定でローカル時刻として扱う
+- read/write: 1900-01-01 より前の `Date` は負のシリアル値になり Excel 上で `####` 表示になる
 
 ## 未対応
 
