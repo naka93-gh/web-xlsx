@@ -73,6 +73,16 @@ describe('openZip エッジ', () => {
     await expect(zip.readBytes('a.txt')).rejects.toThrow(/圧縮方式/)
   })
 
+  it('stored の宣言 compressedSize 超過（隣接バイト混入）は invalid として拒否', async () => {
+    // 実体 5B の stored エントリの CDH compressedSize を 30 に偽装する。
+    // 検査が無いと subarray が後続の中央ディレクトリ("PK\x01\x02"…)を含んだまま黙って返る
+    const zip = buildSingle('a.txt', 'hello', 0)
+    const cdStart = zip.length - 22 - (46 + enc.encode('a.txt').length)
+    new DataView(zip.buffer).setUint32(cdStart + 20, 30, true) // CDH compressedSize を 30 に
+    const archive = await openZip(zip)
+    await expect(archive.readBytes('a.txt')).rejects.toThrow(/境界/)
+  })
+
   it('中央ディレクトリが末尾で切れていても RangeError でなく ZipError', async () => {
     const zip = buildSingle('a.txt', 'x', 0)
     // EOCD の cdOffset を末尾近く（46 バイト読めない位置）に書き換える

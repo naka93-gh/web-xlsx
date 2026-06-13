@@ -178,6 +178,12 @@ export async function openZip(
     const nameLen = view.getUint16(entry.localOffset + 26, true)
     const extraLen = view.getUint16(entry.localOffset + 28, true)
     const dataStart = entry.localOffset + 30 + nameLen + extraLen
+    // 切り出し範囲が中央ディレクトリ（= ローカルデータ領域の終端）を越えないか検査する。
+    // stored(method 0) は宣言 compressedSize が実体より大きくても deflate のように壊れず
+    // 素通りし、subarray が後続バイト（CD 等）を含んだまま返す silent corruption になりうる。
+    if (dataStart + entry.compressedSize > cdOffset) {
+      throw new ZipError('invalid', 'エントリのデータ範囲がアーカイブ境界を超えています')
+    }
     const data = bytes.subarray(dataStart, dataStart + entry.compressedSize)
 
     // 残り予算（全体上限 − 既展開分）と単体上限の小さい方をこのエントリの上限に
