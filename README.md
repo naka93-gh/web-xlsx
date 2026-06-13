@@ -8,7 +8,7 @@
 
 ブラウザ・Node に対応した TypeScript 製の xlsx read/write ライブラリ。
 
-[デモページはこちら。](https://naka93-gh.github.io/web-xlsx/)
+[デモページはこちら。](https://naka93-gh.github.io/web-xlsx-playground/)
 
 ## 特徴
 
