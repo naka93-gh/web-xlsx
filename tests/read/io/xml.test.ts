@@ -28,6 +28,12 @@ describe('decodeEntities', () => {
     expect(decodeEntities('&#x110000;')).toBe('&#x110000;')
     expect(decodeEntities('&#1114112;')).toBe('&#1114112;')
   })
+
+  it('サロゲート域(0xD800–0xDFFF)の数値参照は不対サロゲート化せず元のまま残す', () => {
+    expect(decodeEntities('&#xD800;')).toBe('&#xD800;') // 上位サロゲート
+    expect(decodeEntities('&#xDFFF;')).toBe('&#xDFFF;') // 下位サロゲート
+    expect(decodeEntities('&#55296;')).toBe('&#55296;') // 0xD800 を 10 進で
+  })
 })
 
 describe('tokenize', () => {

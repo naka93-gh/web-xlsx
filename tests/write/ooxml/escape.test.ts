@@ -27,6 +27,18 @@ describe('escapeText（テキストノード用）', () => {
   it('tab/LF は許可文字なので残す（CR のみ実体化）', () => {
     expect(escapeText('a\tb\nc')).toBe('a\tb\nc')
   })
+
+  it('非文字 U+FFFE / U+FFFF を除去する', () => {
+    expect(escapeText('a\uFFFEb\uFFFFc')).toBe('abc')
+  })
+
+  it('不対サロゲートを除去し、有効なサロゲートペアは保持する', () => {
+    // 単独の上位/下位サロゲート（XML 1.0 違反）は落とす
+    expect(escapeText('a\uD800b')).toBe('ab') // 単独上位
+    expect(escapeText('a\uDC00b')).toBe('ab') // 単独下位
+    // 😀 = U+1F600 = ペア 😀。正規の文字なので残す
+    expect(escapeText('x😀y')).toBe('x😀y')
+  })
 })
 
 describe('escapeAttr（属性値用）', () => {

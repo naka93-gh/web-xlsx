@@ -32,8 +32,10 @@ export function decodeEntities(s: string): string {
     if (body[0] === '#') {
       const code =
         body[1] === 'x' ? Number.parseInt(body.slice(2), 16) : Number.parseInt(body.slice(1), 10)
-      // Unicode 範囲外（0x10FFFF 超）は fromCodePoint が例外を投げるので元のまま温存
-      return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole
+      // 範囲外（0x10FFFF 超で fromCodePoint が例外）と、単独サロゲート域（0xD800–0xDFFF。
+      // デコードすると不対サロゲートになり XML 1.0 違反）は変換せず元の参照のまま温存する
+      if (code < 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) return whole
+      return String.fromCodePoint(code)
     }
     const mapped = NAMED_ENTITIES[body]
     return mapped !== undefined ? mapped : whole
