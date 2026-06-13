@@ -45,3 +45,16 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm size:check
+
+  # ブランチ保護の必須チェックを安定させるゲート。
+  # check は matrix 展開で名前が変わる（"check (22)" 等）ため必須コンテキストに
+  # 直接指定すると食い違う。必須チェックはこの gate 1 本だけを指定すれば、
+  # matrix や Node 範囲（0.4.0 で 22+ に絞る予定）を変えても保護設定は無修正で済む。
+  gate:
+    if: always()
+    needs: [check, size]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Required jobs succeeded
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
