@@ -47,6 +47,8 @@ export function parseIsoDate(text: string, utc = false): Date | null {
  */
 export function formatIsoDate(date: Date, utc = false): string {
   const pad = (n: number, w = 2) => String(n).padStart(w, '0')
+
+  // utc に応じてローカル壁時計 / UTC のどちらの暦日・時刻を読むか選ぶ
   const c = utc
     ? {
         y: date.getUTCFullYear(),
@@ -66,6 +68,7 @@ export function formatIsoDate(date: Date, utc = false): string {
         s: date.getSeconds(),
         ms: date.getMilliseconds(),
       }
+  // 時刻が 0:00:00.000 なら日付のみ、あれば秒（ミリ秒があれば .sss）まで出す
   const day = `${pad(c.y, 4)}-${pad(c.mo)}-${pad(c.d)}`
   if (c.h === 0 && c.mi === 0 && c.s === 0 && c.ms === 0) return day
   const time = `${pad(c.h)}:${pad(c.mi)}:${pad(c.s)}`

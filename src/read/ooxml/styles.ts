@@ -2,9 +2,13 @@
 
 import { tokenize } from '../io/xml.js'
 
-/** 開いたスタイル表 */
+/**
+ * 開いたスタイル表
+ */
 export type Styles = {
-  /** セルの s 属性（cellXfs のインデックス）が日付書式を指すか */
+  /**
+   * セルの s 属性（cellXfs のインデックス）が日付書式を指すか
+   */
   isDate(styleIndex: number): boolean
 }
 
@@ -19,7 +23,9 @@ const BUILTIN_DATE_IDS = new Set<number>([
   52, 53, 54, 55, 56, 57, 58,
 ])
 
-/** 書式コードからリテラル/装飾を除去する（クォート・エスケープ・[...]・_x・*x） */
+/**
+ * 書式コードからリテラル/装飾を除去する（クォート・エスケープ・[...]・_x・*x）
+ */
 function stripFormat(code: string): string {
   let out = ''
   let i = 0
@@ -41,7 +47,9 @@ function stripFormat(code: string): string {
   return out
 }
 
-/** カスタム書式コードが日付/時刻か（y/m/d/h/s トークンを含むか） */
+/**
+ * カスタム書式コードが日付/時刻か（y/m/d/h/s トークンを含むか）
+ */
 function isDateFormatCode(code: string): boolean {
   return /[ymdhs]/.test(stripFormat(code).toLowerCase())
 }
@@ -75,11 +83,13 @@ export function parseStyles(xml: string): Styles {
     }
   }
 
+  // numFmtId が日付か（カスタムは書式コード判定、無ければ builtin 表）を引けるようにする
   const isDateNumFmt = (numFmtId: number): boolean => {
     const code = customCodes.get(numFmtId)
     return code !== undefined ? isDateFormatCode(code) : BUILTIN_DATE_IDS.has(numFmtId)
   }
 
+  // 各 cellXf を日付フラグに畳み、スタイルインデックスで引けるようにして返す
   const dateFlags = cellXfNumFmtIds.map(isDateNumFmt)
   return { isDate: (styleIndex) => dateFlags[styleIndex] ?? false }
 }

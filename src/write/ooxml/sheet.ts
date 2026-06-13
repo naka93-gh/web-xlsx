@@ -7,14 +7,18 @@ import { DECL, NS_MAIN } from './consts.js'
 import { escapeText } from './escape.js'
 import { DATE_STYLE, HEADER_STYLE } from './styles.js'
 
-/** 表示幅の概算（全角を 2 カウント） */
+/**
+ * 表示幅の概算（全角を 2 カウント）
+ */
 function displayWidth(s: string): number {
   let w = 0
   for (const ch of s) w += (ch.codePointAt(0) ?? 0) > 0xff ? 2 : 1
   return w
 }
 
-/** 列幅計算用に、セル値を表示文字列へ */
+/**
+ * 列幅計算用に、セル値を表示文字列へ
+ */
 function cellText(value: Cell): string {
   if (value === null) return ''
   if (value instanceof Date) return 'yyyy-mm-dd' // 10 文字相当
@@ -22,7 +26,9 @@ function cellText(value: Cell): string {
   return String(value)
 }
 
-/** ヘッダーとデータから列ごとの幅を見積もる（8〜60 にクランプ） */
+/**
+ * ヘッダーとデータから列ごとの幅を見積もる（8〜60 にクランプ）
+ */
 function columnWidths(headers: string[], rows: Cell[][]): number[] {
   return headers.map((header, c) => {
     let max = displayWidth(header)
@@ -34,7 +40,9 @@ function columnWidths(headers: string[], rows: Cell[][]): number[] {
   })
 }
 
-/** 1 セルを <c> へ。style は cellXfs インデックス（0 は省略） */
+/**
+ * 1 セルを <c> へ。style は cellXfs インデックス（0 は省略）
+ */
 function cellXml(ref: string, value: Cell, style: number, utc: boolean): string {
   const s = style > 0 ? ` s="${style}"` : ''
   if (value === null || value === '') return `<c r="${ref}"${s}/>`
@@ -50,11 +58,14 @@ function cellXml(ref: string, value: Cell, style: number, utc: boolean): string 
   if (typeof value === 'boolean') {
     return `<c r="${ref}" t="b"${s}><v>${value ? 1 : 0}</v></c>`
   }
+
   // 文字列はインライン文字列。前後空白の消失を防ぐため preserve を付ける
   return `<c r="${ref}" t="inlineStr"${s}><is><t xml:space="preserve">${escapeText(value)}</t></is></c>`
 }
 
-/** 1 行を <row> へ */
+/**
+ * 1 行を <row> へ
+ */
 function rowXml(rowIndex: number, cells: Cell[], style: number, utc: boolean): string {
   const rowNum = rowIndex + 1
   let body = ''
@@ -64,11 +75,17 @@ function rowXml(rowIndex: number, cells: Cell[], style: number, utc: boolean): s
   return `<row r="${rowNum}">${body}</row>`
 }
 
-/** sheet 生成オプション */
+/**
+ * sheet 生成オプション
+ */
 export type SheetOptions = {
-  /** ヘッダー太字・先頭行固定・列幅自動を付ける */
+  /**
+   * ヘッダー太字・先頭行固定・列幅自動を付ける
+   */
   style: boolean
-  /** Date を UTC 固定でシリアル値にする（既定 false=ローカル壁時計） */
+  /**
+   * Date を UTC 固定でシリアル値にする（既定 false=ローカル壁時計）
+   */
   utc: boolean
 }
 
@@ -81,6 +98,7 @@ export type SheetOptions = {
 export function sheetXml(headers: string[], rows: Cell[][], options: SheetOptions): string {
   const { style, utc } = options
 
+  // 列幅自動（style 有効かつ列がある時だけ <cols> を出す）
   const cols =
     style && headers.length > 0
       ? `<cols>${columnWidths(headers, rows)
@@ -88,10 +106,12 @@ export function sheetXml(headers: string[], rows: Cell[][], options: SheetOption
           .join('')}</cols>`
       : ''
 
+  // 先頭行固定（freeze pane）
   const sheetViews = style
     ? `<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>`
     : ''
 
+  // 1 行目をヘッダー（style 有効時は太字）、以降をデータ行として並べる
   const headerStyle = style ? HEADER_STYLE : 0
   let data = rowXml(0, headers, headerStyle, utc)
   for (let r = 0; r < rows.length; r++) {

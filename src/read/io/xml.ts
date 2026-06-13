@@ -42,7 +42,9 @@ export function decodeEntities(s: string): string {
   })
 }
 
-/** 空白文字か */
+/**
+ * 空白文字か
+ */
 function isSpace(ch: string): boolean {
   return ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r'
 }
@@ -59,7 +61,9 @@ function localName(name: string): string {
   return colon === -1 ? name : name.slice(colon + 1)
 }
 
-/** start 位置のタグ終端 `>` をクォートを考慮して探す（属性値内の `>` を誤検出しない） */
+/**
+ * start 位置のタグ終端 `>` をクォートを考慮して探す（属性値内の `>` を誤検出しない）
+ */
 function findTagEnd(xml: string, start: number): number {
   let quote = ''
   for (let k = start; k < xml.length; k++) {
@@ -75,7 +79,9 @@ function findTagEnd(xml: string, start: number): number {
   return -1
 }
 
-/** タグ内部文字列（`<` `>` を除いた中身）から要素名と属性を取り出す */
+/**
+ * タグ内部文字列（`<` `>` を除いた中身）から要素名と属性を取り出す
+ */
 function parseTag(inner: string): { name: string; attrs: Record<string, string> } {
   const len = inner.length
   let j = 0
@@ -142,6 +148,7 @@ export function* tokenize(xml: string): Generator<XmlToken> {
       continue
     }
 
+    // コメント / CDATA / 処理命令 / DOCTYPE: いずれも読み飛ばす（CDATA だけ中身をテキスト化）
     if (xml.startsWith('<!--', i)) {
       const end = xml.indexOf('-->', i + 4)
       i = end === -1 ? n : end + 3

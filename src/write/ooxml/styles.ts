@@ -2,10 +2,14 @@
 
 import { DECL, NS_MAIN } from './consts.js'
 
-/** 日付セルに付ける cellXfs インデックス（numFmt 164 = yyyy-mm-dd） */
+/**
+ * 日付セルに付ける cellXfs インデックス（numFmt 164 = yyyy-mm-dd）
+ */
 export const DATE_STYLE = 1
 
-/** ヘッダー行に付ける cellXfs インデックス（太字） */
+/**
+ * ヘッダー行に付ける cellXfs インデックス（太字）
+ */
 export const HEADER_STYLE = 2
 
 /**

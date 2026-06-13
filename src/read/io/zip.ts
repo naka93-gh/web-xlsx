@@ -16,7 +16,9 @@ const SIG_LFH = 0x04034b50 // Local File Header
  */
 export type ZipErrorCode = 'not-zip' | 'invalid' | 'unsupported' | 'too-large'
 
-/** ZIP 読み取りの失敗 */
+/**
+ * ZIP 読み取りの失敗
+ */
 export class ZipError extends Error {
   readonly code: ZipErrorCode
   constructor(code: ZipErrorCode, message: string) {
@@ -30,7 +32,9 @@ export class ZipError extends Error {
 const DEFAULT_MAX_ENTRY_BYTES = 300 * 1024 * 1024 // 単体エントリの解凍サイズ上限
 const DEFAULT_MAX_TOTAL_BYTES = 600 * 1024 * 1024 // アーカイブ全体の累積解凍サイズ上限
 
-/** central directory の 1 エントリ */
+/**
+ * central directory の 1 エントリ
+ */
 type Entry = {
   method: number
   compressedSize: number
@@ -38,7 +42,9 @@ type Entry = {
   localOffset: number
 }
 
-/** 開いた ZIP アーカイブ */
+/**
+ * 開いた ZIP アーカイブ
+ */
 export type ZipArchive = {
   has(name: string): boolean
   readBytes(name: string): Promise<Uint8Array>
@@ -95,7 +101,9 @@ async function inflateRaw(data: Uint8Array<ArrayBuffer>, limit: number): Promise
   return out
 }
 
-/** 末尾から EOCD シグネチャを探す（後ろにコメントが付きうる） */
+/**
+ * 末尾から EOCD シグネチャを探す（後ろにコメントが付きうる）
+ */
 function findEocd(bytes: Uint8Array, view: DataView): number {
   const n = bytes.length
   if (n < 22) throw new ZipError('not-zip', 'ZIP として短すぎます')
@@ -117,12 +125,15 @@ export async function openZip(
 ): Promise<ZipArchive> {
   const maxEntryBytes = limits.maxEntryBytes ?? DEFAULT_MAX_ENTRY_BYTES
   const maxTotalBytes = limits.maxTotalBytes ?? DEFAULT_MAX_TOTAL_BYTES
+
+  // 入力を正規化し、解析用の DataView を張る
   // 解析中はバッファを ArrayBuffer 固定で扱う（Blob/DecompressionStream の型要件）
   const bytes = (
     input instanceof Uint8Array ? input : new Uint8Array(input)
   ) as Uint8Array<ArrayBuffer>
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
 
+  // EOCD を見つけて中央ディレクトリの位置とエントリ数を得る
   const eocd = findEocd(bytes, view)
   const total = view.getUint16(eocd + 10, true)
   const cdOffset = view.getUint32(eocd + 16, true)
@@ -130,6 +141,7 @@ export async function openZip(
     throw new ZipError('invalid', 'ZIP64 は未対応です')
   }
 
+  // 中央ディレクトリを走査してエントリ表（名前 → 位置・サイズ）を作る
   const entries = new Map<string, Entry>()
   let p = cdOffset
   for (let idx = 0; idx < total; idx++) {
@@ -162,18 +174,22 @@ export async function openZip(
   let totalDecompressed = 0 // 展開済みエントリの累積バイト（アーカイブ全体の上限判定）
 
   async function readBytes(name: string): Promise<Uint8Array> {
+    // 同じエントリの再展開を避ける
     const cached = cache.get(name)
     if (cached) return cached
 
+    // エントリ表から位置を引く
     const entry = entries.get(name)
     if (!entry) throw new ZipError('invalid', `エントリが見つかりません: ${name}`)
 
+    // ローカルヘッダを検証し、圧縮データの開始位置を求める
     if (
       entry.localOffset + 30 > view.byteLength ||
       view.getUint32(entry.localOffset, true) !== SIG_LFH
     ) {
       throw new ZipError('invalid', 'ローカルヘッダが壊れています')
     }
+
     // name/extra 長はローカルヘッダ自身から読む（中央ディレクトリと異なりうる）
     const nameLen = view.getUint16(entry.localOffset + 26, true)
     const extraLen = view.getUint16(entry.localOffset + 28, true)
@@ -186,12 +202,14 @@ export async function openZip(
     }
     const data = bytes.subarray(dataStart, dataStart + entry.compressedSize)
 
+    // このエントリに許す解凍サイズの上限を決める
     // 残り予算（全体上限 − 既展開分）と単体上限の小さい方をこのエントリの上限に
     const limit = Math.min(maxEntryBytes, maxTotalBytes - totalDecompressed)
     if (limit < 0) {
       throw new ZipError('too-large', `解凍サイズが全体上限(${maxTotalBytes} バイト)を超えました`)
     }
 
+    // 圧縮方式ごとに展開する（無圧縮はそのまま、deflate は展開、それ以外は非対応）
     let out: Uint8Array
     if (entry.method === 0) {
       // 無圧縮は入力バッファ内に収まっており膨張しないが、累積予算には数える
@@ -208,6 +226,7 @@ export async function openZip(
     } else {
       throw new ZipError('invalid', `未対応の圧縮方式です: ${entry.method}`)
     }
+    // 累積に加えてキャッシュし返す
     totalDecompressed += out.byteLength
     cache.set(name, out)
     return out

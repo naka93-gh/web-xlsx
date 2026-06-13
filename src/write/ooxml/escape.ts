@@ -9,7 +9,9 @@ const ILLEGAL_XML = /[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFE\uFFFF]/g
 // 有効なサロゲートペアは保持する（前後に対があるものはどちらの選択肢にも合致しない）
 const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g
 
-/** テキストノード用エスケープ（禁止文字・不対サロゲートを除去し、& < > と CR を実体化） */
+/**
+ * テキストノード用エスケープ（禁止文字・不対サロゲートを除去し、& < > と CR を実体化）
+ */
 export function escapeText(s: string): string {
   return s
     .replace(ILLEGAL_XML, '')
@@ -20,7 +22,9 @@ export function escapeText(s: string): string {
     .replace(/\r/g, '&#13;')
 }
 
-/** 属性値用エスケープ（テキスト用に加えて " も実体化） */
+/**
+ * 属性値用エスケープ（テキスト用に加えて " も実体化）
+ */
 export function escapeAttr(s: string): string {
   return escapeText(s).replace(/"/g, '&quot;')
 }

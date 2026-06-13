@@ -10,17 +10,25 @@ const SIG_EOCD = 0x06054b50 // End Of Central Directory
 const DOS_TIME = 0
 const DOS_DATE = 0x21 // (year-1980=0)<<9 | month1<<5 | day1
 
-/** ZIP に入れる 1 エントリ */
+/**
+ * ZIP に入れる 1 エントリ
+ */
 export type ZipEntry = {
-  /** アーカイブ内パス（例: "xl/worksheets/sheet1.xml"） */
+  /**
+   * アーカイブ内パス（例: "xl/worksheets/sheet1.xml"）
+   */
   name: string
-  /** 格納する生バイト列 */
+  /**
+   * 格納する生バイト列
+   */
   data: Uint8Array
 }
 
 const utf8 = new TextEncoder()
 
-/** deflate-raw 圧縮。CompressionStream 非対応環境では null（呼び側で stored にフォールバック） */
+/**
+ * deflate-raw 圧縮。CompressionStream 非対応環境では null（呼び側で stored にフォールバック）
+ */
 async function deflateRaw(data: Uint8Array): Promise<Uint8Array | null> {
   if (typeof CompressionStream === 'undefined') return null
   let compressor: CompressionStream
@@ -34,7 +42,9 @@ async function deflateRaw(data: Uint8Array): Promise<Uint8Array | null> {
   return new Uint8Array(await new Response(stream).arrayBuffer())
 }
 
-/** 圧縮済みエントリの内部表現 */
+/**
+ * 圧縮済みエントリの内部表現
+ */
 type Prepared = {
   nameBytes: Uint8Array
   method: number // 0=stored / 8=deflate
@@ -51,6 +61,7 @@ type Prepared = {
  * ZIP64 は出さない（4GB 級は対象外）
  */
 export async function buildZip(entries: ZipEntry[]): Promise<Uint8Array> {
+  // 各エントリを圧縮（または stored）して、CRC・サイズ・配置オフセットを確定する
   const prepared: Prepared[] = []
   let offset = 0
 
@@ -72,6 +83,7 @@ export async function buildZip(entries: ZipEntry[]): Promise<Uint8Array> {
     offset += 30 + nameBytes.length + data.length
   }
 
+  // 各エントリのローカルヘッダ＋データと、中央ディレクトリヘッダを書き出す
   const cdStart = offset
   const locals: Uint8Array[] = []
   const centrals: Uint8Array[] = []

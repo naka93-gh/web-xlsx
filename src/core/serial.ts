@@ -14,10 +14,14 @@
 
 const MS_PER_DAY = 86_400_000
 
-/** 1900 系の起点（閏バグ補正済み） */
+/**
+ * 1900 系の起点（閏バグ補正済み）
+ */
 const EPOCH_1900_UTC = Date.UTC(1899, 11, 30)
 
-/** 1904 系の起点（シリアル 0 = 1904-01-01） */
+/**
+ * 1904 系の起点（シリアル 0 = 1904-01-01）
+ */
 const EPOCH_1904_UTC = Date.UTC(1904, 0, 1)
 
 /**
@@ -56,6 +60,8 @@ export function serialToDate(
  */
 export function dateToSerial(date: Date, options?: { date1904?: boolean; utc?: boolean }): number {
   const base = options?.date1904 ? EPOCH_1904_UTC : EPOCH_1900_UTC
+
+  // utc に応じてローカル壁時計 / UTC のどちらの暦日・時刻を読むか選ぶ
   const c = options?.utc
     ? {
         y: date.getUTCFullYear(),
@@ -77,6 +83,7 @@ export function dateToSerial(date: Date, options?: { date1904?: boolean; utc?: b
           date.getSeconds() * 1_000 +
           date.getMilliseconds(),
       }
+
   // 暦日を UTC に写して起点との日数差を取る
   const whole = Math.round((Date.UTC(c.y, c.mo, c.d) - base) / MS_PER_DAY)
   return whole + c.ms / MS_PER_DAY

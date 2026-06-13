@@ -7,9 +7,13 @@ import { sheetXml } from './ooxml/sheet.js'
 import { stylesXml } from './ooxml/styles.js'
 import { contentTypesXml, rootRelsXml, workbookRelsXml, workbookXml } from './ooxml/workbook.js'
 
-/** 書き出しオプション */
+/**
+ * 書き出しオプション
+ */
 export type BuildOptions = {
-  /** シート名（既定: "Sheet1"） */
+  /**
+   * シート名（既定: "Sheet1"）
+   */
   sheetName?: string
 
   /**
@@ -38,13 +42,17 @@ export type BuildArgs = {
   options?: BuildOptions
 }
 
-/** スキーマ付きの第2引数 */
+/**
+ * スキーマ付きの第2引数
+ */
 export type BuildArgsWithSchema<S extends Schema> = {
   schema: S
   options?: BuildOptions
 }
 
-/** unknown 値を Cell に寄せる（Cell 外の型は String 化、未入力は null） */
+/**
+ * unknown 値を Cell に寄せる（Cell 外の型は String 化、未入力は null）
+ */
 function toCell(value: unknown): Cell {
   if (value === undefined || value === null) return null
   if (
@@ -55,11 +63,14 @@ function toCell(value: unknown): Cell {
   ) {
     return value
   }
+
   // object / array / bigint / symbol 等は String 化して文字列セルにする（cellXml の crash 回避）
   return String(value)
 }
 
-/** スキーマ無し: 全行のキーを出現順に集めてヘッダーとし、セル行列を作る */
+/**
+ * スキーマ無し: 全行のキーを出現順に集めてヘッダーとし、セル行列を作る
+ */
 function fromRows(rows: Row[]): { headers: string[]; matrix: Cell[][] } {
   const headers: string[] = []
   const seen = new Set<string>()
@@ -75,7 +86,9 @@ function fromRows(rows: Row[]): { headers: string[]; matrix: Cell[][] } {
   return { headers, matrix }
 }
 
-/** スキーマ付き: スキーマのキー順をヘッダーに、prop でセル値を引く */
+/**
+ * スキーマ付き: スキーマのキー順をヘッダーに、prop でセル値を引く
+ */
 function fromSchema(
   rows: Record<string, unknown>[],
   schema: Schema,
@@ -109,17 +122,22 @@ export async function build(
   args: { schema?: Schema; options?: BuildOptions } = {},
 ): Promise<Uint8Array> {
   const { schema, options = {} } = args
-  // 複数列が同じ prop だと同じソース値が複数列に複製される → 設定ミスとして弾く
+
+  // スキーマ付きは prop 重複を設定ミスとして弾く
+  // 複数列が同じ prop だと同じソース値が複数列に複製される
   if (schema) {
     const dupProp = findDuplicateProp(schema)
     if (dupProp !== undefined) {
       throw new Error(`スキーマの prop が重複しています: "${dupProp}"`)
     }
   }
+
+  // ヘッダーとセル行列を組み立てる（スキーマ有無で列順の決め方が変わる）
   const style = options.style ?? true
   const utc = options.utc ?? false
   const { headers, matrix } = schema ? fromSchema(rows, schema) : fromRows(rows as Row[])
 
+  // 各 OOXML パーツを XML 化して ZIP にまとめる
   const enc = new TextEncoder()
   const part = (name: string, xml: string): ZipEntry => ({ name, data: enc.encode(xml) })
 

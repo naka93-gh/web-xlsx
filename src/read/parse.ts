@@ -1,4 +1,4 @@
-import { findDuplicateProp } from '../core/schema.js'
+import { findDuplicateProp, firstDuplicate } from '../core/schema.js'
 import type {
   Cell,
   FileError,
@@ -27,7 +27,9 @@ import { applySchema } from './schema.js'
 
 const EMPTY_STYLES: Styles = { isDate: () => false }
 
-/** 例外を FileError に変換する */
+/**
+ * 例外を FileError に変換する
+ */
 function toFileError(error: unknown): FileError {
   if (error instanceof ZipError) {
     const code =
@@ -40,10 +42,12 @@ function toFileError(error: unknown): FileError {
             : 'invalid-xlsx' // ZIP は開けたが中身が壊れている/未対応
     return { code, message: error.message }
   }
+
   // range オプションの形式不正はファイル破損と区別する
   if (error instanceof RangeFormatError) {
     return { code: 'invalid-range', message: error.message }
   }
+
   // headerRow 等オプションの指定値不正もファイル破損と区別する
   if (error instanceof OptionError) {
     return { code: 'invalid-option', message: error.message }
@@ -68,17 +72,9 @@ function findMissingRequiredHeaders(schema: Schema, headers: string[]): string[]
     .map(([h]) => h)
 }
 
-/** ヘッダー配列の最初の重複名を返す（無ければ undefined） */
-function findDuplicateHeader(headers: string[]): string | undefined {
-  const seen = new Set<string>()
-  for (const h of headers) {
-    if (seen.has(h)) return h
-    seen.add(h)
-  }
-  return undefined
-}
-
-/** zip → workbook → sheet までを通し、シート行を取り出す */
+/**
+ * zip → workbook → sheet までを通し、シート行を取り出す
+ */
 async function readWorkbookSheet(
   data: ArrayBuffer | Uint8Array,
   options: ParseOptions,
@@ -88,6 +84,7 @@ async function readWorkbookSheet(
   | { ok: false; error: FileError }
 > {
   try {
+    // zip を開いて workbook を読み、対象シートを特定する
     const zip = await openZip(data, options.limits)
     const workbook = await openWorkbook(zip)
     const sheetRef = selectSheet(workbook, options.sheet)
@@ -98,6 +95,7 @@ async function readWorkbookSheet(
         error: { code: 'sheet-not-found', message: '対象シートが見つかりません' },
       }
     }
+
     // シートは宣言されているが本体 XML がアーカイブに無い → 必要パーツ欠落
     if (!zip.has(sheetRef.path)) {
       return {
@@ -106,6 +104,7 @@ async function readWorkbookSheet(
       }
     }
 
+    // 共有文字列・スタイルを読む（どちらも欠けていれば空で代用する）
     const sharedStrings =
       workbook.sharedStringsPath && zip.has(workbook.sharedStringsPath)
         ? parseSharedStrings(await zip.readText(workbook.sharedStringsPath))
@@ -115,12 +114,15 @@ async function readWorkbookSheet(
         ? parseStyles(await zip.readText(workbook.stylesPath))
         : EMPTY_STYLES
 
+    // セル値の解決に必要なコンテキスト（共有文字列・スタイル・日付系）をまとめる
     const ctx: ResolveContext = {
       sharedStrings,
       styles,
       date1904: workbook.date1904,
       utc: options.utc ?? false,
     }
+
+    // シート XML を行データへ変換する
     const sheetXml = await zip.readText(sheetRef.path)
     // ヘッダー無しモードはヘッダー解決・重複検査をせず Cell[][] を返す
     if (options.header === false) {
@@ -128,7 +130,7 @@ async function readWorkbookSheet(
     }
     const sheet = readSheet(sheetXml, ctx, options)
     // 同名ヘッダーは Record キー衝突で前列が黙って消えるため、曖昧として明示拒否する
-    const duplicate = findDuplicateHeader(sheet.headers)
+    const duplicate = firstDuplicate(sheet.headers)
     if (duplicate !== undefined) {
       return {
         ok: false,
@@ -141,7 +143,9 @@ async function readWorkbookSheet(
   }
 }
 
-/** SheetRow を低レベルの Row（値のみ）へ変換する */
+/**
+ * SheetRow を低レベルの Row（値のみ）へ変換する
+ */
 function toRow(row: SheetRow): Row {
   // __proto__ 等の列名が prototype セッターに吸われて消えるのを防ぐ
   const out: Row = Object.create(null)
@@ -205,10 +209,13 @@ export async function parse(
   args: { schema?: Schema; options?: ParseOptions } = {},
 ): Promise<ParseResult<Row | Cell[]>> {
   const { schema, options = {} } = args
+
+  // zip → workbook → sheet を通して行（またはヘッダー無しの Cell[][]）を取り出す
   const result = await readWorkbookSheet(data, options)
   if (!result.ok) return result
   if ('arrays' in result) return { ok: true, data: result.arrays, errors: [] }
 
+  // スキーマ付き: prop 重複・必須列欠落を入口で弾いてから各行を検証・型付けする
   if (schema) {
     // 複数列が同じ prop だと applySchema で後勝ち上書きされ黙って消える → 入口で弾く
     const dupProp = findDuplicateProp(schema)
@@ -235,6 +242,7 @@ export async function parse(
     return { ok: true, data: data as Row[], errors }
   }
 
+  // スキーマ無し: 解決済みの値だけを Row に落として返す
   return { ok: true, data: result.sheet.rows.map(toRow), errors: [] }
 }
 
@@ -280,6 +288,7 @@ export async function parseFile(
     // ファイル破損（invalid-xlsx）とは別事象なので読み込み失敗として区別する
     return { ok: false, error: { code: 'read-failed', message: 'ファイルを読み込めませんでした' } }
   }
+
   // schema の有無で型付きオーバーロードへ振り分ける（impl 同士はオーバーロードを経由する）。
   // exactOptionalPropertyTypes 下では options: undefined を明示できないためキーごと省く
   const { schema, options } = args

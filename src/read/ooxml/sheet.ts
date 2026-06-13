@@ -6,17 +6,35 @@ import type { Cell, ParseOptions } from '../../core/types.js'
 import { tokenize } from '../io/xml.js'
 import { parseRef, type RawCell, type ResolveContext, resolveCell } from './cells.js'
 
-/** 解決済みのセル（raw は精度対策で元の <v> テキストを保持） */
+/**
+ * 解決済みのセル（raw は精度対策で元の <v> テキストを保持）
+ */
 export type SheetCell = { value: Cell; raw: string | undefined }
 
-/** 1 データ行（シート上の行番号つき） */
+/**
+ * 1 データ行（シート上の行番号つき）
+ */
 export type SheetRow = { rowNum: number; cells: Record<string, SheetCell> }
 
-/** readSheet の結果 */
+/**
+ * readSheet の結果
+ */
 export type ReadSheetResult = { headers: string[]; rows: SheetRow[] }
 
-/** シート上に存在した行（列インデックス → raw セル） */
+/**
+ * シート上に存在した行（列インデックス → raw セル）
+ */
 type PresentRow = { rowNum: number; cells: Map<number, RawCell> }
+
+/**
+ * 行・列の範囲（0 始まり列・1 始まり行。欠けた次元は無制限）
+ */
+type CellRange = { minCol: number; maxCol: number; minRow: number; maxRow: number }
+
+/**
+ * ヘッダーの 1 列（列インデックスと解決済みキー）
+ */
+type HeaderCol = { col: number; key: string }
 
 /**
  * 空セルの定義（解決後の値）
@@ -29,18 +47,32 @@ function isBlank(value: Cell): boolean {
   return value === null || value === ''
 }
 
-/** sheetData をトークン走査し、存在する行を列インデックス付きで取り出す */
+/**
+ * sheetData をトークン走査し、存在する行を列インデックス付きで取り出す
+ *
+ * SAX 風の状態機械。タグの open/text/close を 1 パスで処理し、入れ子の現在位置を
+ * 下のフラグ群で覚えておく（DOM を作らないのでメモリは行 1 つ分で済む）
+ */
 function collectRows(xml: string): PresentRow[] {
   const rows: PresentRow[] = []
 
+  // sheetData スコープ内か（外側の要素はすべて無視する）
   let inSheetData = false
+
+  // 現在組み立て中の <row>。lastRowNum/nextCol は r 属性欠落時の連番フォールバック用
   let row: PresentRow | null = null
   let lastRowNum = 0
   let nextCol = 0
+
+  // 現在組み立て中の <c> とその列インデックス
   let cell: RawCell | null = null
   let cellCol = 0
+
+  // <v>（通常値）の収集状態
   let inV = false
   let valueBuf = ''
+
+  // <is>（インライン文字列）の収集状態。phonetic>0 の <rPh>（ふりがな）配下は本文から除外する
   let inIs = false
   let inT = false
   let phonetic = 0
@@ -122,7 +154,9 @@ function collectRows(xml: string): PresentRow[] {
   return rows
 }
 
-/** range オプションの形式が不正なときに投げる */
+/**
+ * range オプションの形式が不正なときに投げる
+ */
 export class RangeFormatError extends Error {
   constructor(message: string) {
     super(message)
@@ -130,7 +164,9 @@ export class RangeFormatError extends Error {
   }
 }
 
-/** headerRow 等オプションの指定値が不正なときに投げる */
+/**
+ * headerRow 等オプションの指定値が不正なときに投げる
+ */
 export class OptionError extends Error {
   constructor(message: string) {
     super(message)
@@ -138,7 +174,9 @@ export class OptionError extends Error {
   }
 }
 
-/** range の端点 "A1"/"A"(列のみ)/"1"(行のみ) を分解。欠けた次元は null。解析不能なら null を返す */
+/**
+ * range の端点 "A1"/"A"(列のみ)/"1"(行のみ) を分解。欠けた次元は null。解析不能なら null を返す
+ */
 function parseEndpoint(ref: string): { col: number | null; row: number | null } | null {
   const m = /^([A-Za-z]+)?(\d+)?$/.exec(ref)
   if (!m || (m[1] === undefined && m[2] === undefined)) return null
@@ -151,7 +189,9 @@ function parseEndpoint(ref: string): { col: number | null; row: number | null } 
   }
 }
 
-/** 1 軸の最小・最大を返す。片側だけ指定（端点で形式不一致）なら投げる */
+/**
+ * 1 軸の最小・最大を返す。片側だけ指定（端点で形式不一致）なら投げる
+ */
 function axisSpan(s: number | null, e: number | null, range: string): [number, number] | null {
   if (s === null && e === null) return null
   if (s === null || e === null) {
@@ -166,12 +206,7 @@ function axisSpan(s: number | null, e: number | null, range: string): [number, n
  * "A1:D100"（矩形）/ "A:D"（列のみ・全行）/ "2:100"（行のみ・全列）に対応する
  * 欠けた次元は無制限。形式が不正なら {@link RangeFormatError} を投げる
  */
-function parseRange(range: string): {
-  minCol: number
-  maxCol: number
-  minRow: number
-  maxRow: number
-} {
+function parseRange(range: string): CellRange {
   const parts = range.split(':')
   // "A1:B2:C3" のようなコロン過多は黙って "A1:B2" に丸めず不正として弾く
   if (parts.length > 2) throw new RangeFormatError(`range の形式が不正です: "${range}"`)
@@ -188,6 +223,69 @@ function parseRange(range: string): {
     minRow: row ? row[0] : 1,
     maxRow: row ? row[1] : Number.POSITIVE_INFINITY,
   }
+}
+
+/**
+ * present 行を取得し range で行を絞る。列の範囲内判定（inColRange）も返す
+ */
+function collectInRange(
+  xml: string,
+  range: CellRange | undefined,
+): { present: PresentRow[]; inColRange: (col: number) => boolean } {
+  const inColRange = (col: number) => !range || (col >= range.minCol && col <= range.maxCol)
+  let present = collectRows(xml)
+  if (range) present = present.filter((r) => r.rowNum >= range.minRow && r.rowNum <= range.maxRow)
+  return { present, inColRange }
+}
+
+/**
+ * ヘッダー行から (列index, キー) の対を作る。範囲外・空セルは除外、Date は ISO 8601 化
+ */
+function resolveHeaderColumns(
+  headerRow: PresentRow | undefined,
+  ctx: ResolveContext,
+  inColRange: (col: number) => boolean,
+): HeaderCol[] {
+  if (!headerRow) return []
+  const cols: HeaderCol[] = []
+  const sorted = [...headerRow.cells.entries()].sort((a, b) => a[0] - b[0])
+  for (const [col, raw] of sorted) {
+    if (!inColRange(col)) continue
+    const value = resolveCell(raw, ctx)
+    if (isBlank(value)) continue
+    // Date は実装依存の Date.toString でなく ISO 8601 にする（schema 側 formatIsoDate と対称）
+    const key = value instanceof Date ? formatIsoDate(value, ctx.utc) : String(value)
+    cols.push({ col, key })
+  }
+  return cols
+}
+
+/**
+ * ヘッダー行より後の行を headerCols に沿って SheetRow 化する（空行は skipEmpty に従う）
+ */
+function buildDataRows(
+  present: PresentRow[],
+  headerCols: HeaderCol[],
+  ctx: ResolveContext,
+  headerRowNum: number,
+  skipEmpty: boolean,
+): SheetRow[] {
+  const rows: SheetRow[] = []
+  for (const r of present) {
+    if (r.rowNum <= headerRowNum) continue
+    // __proto__ 等の列名が prototype セッターに吸われて消えるのを防ぐ
+    const cells: Record<string, SheetCell> = Object.create(null)
+    let hasValue = false
+    for (const { col, key } of headerCols) {
+      const raw = r.cells.get(col)
+      const value = raw ? resolveCell(raw, ctx) : null
+      if (!isBlank(value)) hasValue = true
+      cells[key] = { value, raw: raw ? (raw.value ?? raw.inlineText) : undefined }
+    }
+    if (skipEmpty && !hasValue) continue
+    rows.push({ rowNum: r.rowNum, cells })
+  }
+  return rows
 }
 
 /**
@@ -209,12 +307,11 @@ export function readSheet(
     }
   }
 
+  // 存在する行を集め、range があれば行で絞る
   const range = options.range ? parseRange(options.range) : undefined
-  const inColRange = (col: number) => !range || (col >= range.minCol && col <= range.maxCol)
+  const { present, inColRange } = collectInRange(xml, range)
 
-  let present = collectRows(xml)
-  if (range) present = present.filter((r) => r.rowNum >= range.minRow && r.rowNum <= range.maxRow)
-
+  // ヘッダー行を決める（指定が無ければ最初の非空行）
   // 行が非空か（範囲内の列に空でない値があるか）
   const isNonEmpty = (r: PresentRow): boolean => {
     for (const [col, raw] of r.cells) {
@@ -222,43 +319,15 @@ export function readSheet(
     }
     return false
   }
-
   const headerRowNum = options.headerRow ?? present.find(isNonEmpty)?.rowNum
   if (headerRowNum === undefined) return { headers: [], rows: [] }
 
+  // ヘッダー列を解決し、以降の行をそれに沿ってデータ化する
   const headerRow = present.find((r) => r.rowNum === headerRowNum)
-  const headerCols: { col: number; key: string }[] = []
-  if (headerRow) {
-    const sorted = [...headerRow.cells.entries()].sort((a, b) => a[0] - b[0])
-    for (const [col, raw] of sorted) {
-      if (!inColRange(col)) continue
-      const value = resolveCell(raw, ctx)
-      if (isBlank(value)) continue
-      // Date は実装依存の Date.toString でなく ISO 8601 にする（schema 側 formatIsoDate と対称）
-      const key = value instanceof Date ? formatIsoDate(value, ctx.utc) : String(value)
-      headerCols.push({ col, key })
-    }
-  }
-  const headers = headerCols.map((h) => h.key)
+  const headerCols = resolveHeaderColumns(headerRow, ctx, inColRange)
+  const rows = buildDataRows(present, headerCols, ctx, headerRowNum, options.skipEmptyRows ?? true)
 
-  const skipEmpty = options.skipEmptyRows ?? true
-  const rows: SheetRow[] = []
-  for (const r of present) {
-    if (r.rowNum <= headerRowNum) continue
-    // __proto__ 等の列名が prototype セッターに吸われて消えるのを防ぐ
-    const cells: Record<string, SheetCell> = Object.create(null)
-    let hasValue = false
-    for (const { col, key } of headerCols) {
-      const raw = r.cells.get(col)
-      const value = raw ? resolveCell(raw, ctx) : null
-      if (!isBlank(value)) hasValue = true
-      cells[key] = { value, raw: raw ? (raw.value ?? raw.inlineText) : undefined }
-    }
-    if (skipEmpty && !hasValue) continue
-    rows.push({ rowNum: r.rowNum, cells })
-  }
-
-  return { headers, rows }
+  return { headers: headerCols.map((h) => h.key), rows }
 }
 
 /**
@@ -273,12 +342,10 @@ export function readSheetArrays(
   ctx: ResolveContext,
   options: Pick<ParseOptions, 'range' | 'skipEmptyRows'> = {},
 ): Cell[][] {
+  // 存在する行を集め、range があれば行で絞る。左端列を index 0 の基準にする
   const range = options.range ? parseRange(options.range) : undefined
-  const inColRange = (col: number) => !range || (col >= range.minCol && col <= range.maxCol)
+  const { present, inColRange } = collectInRange(xml, range)
   const baseCol = range ? range.minCol : 0
-
-  let present = collectRows(xml)
-  if (range) present = present.filter((r) => r.rowNum >= range.minRow && r.rowNum <= range.maxRow)
 
   // 各行を解決しつつ、範囲内で値を持つ最大列を求める（矩形の右端）
   const resolved: { values: Map<number, Cell>; hasValue: boolean }[] = []
@@ -297,9 +364,11 @@ export function readSheetArrays(
     }
     resolved.push({ values, hasValue })
   }
+
   // range で右端が確定しているなら、データが無くてもそこまで埋める
   if (range && Number.isFinite(range.maxCol)) rightCol = range.maxCol
 
+  // 各行を baseCol 起点・width 列の配列に矩形化する（空行は skipEmpty に従う）
   const skipEmpty = options.skipEmptyRows ?? true
   const width = Math.max(0, rightCol - baseCol + 1)
   const out: Cell[][] = []

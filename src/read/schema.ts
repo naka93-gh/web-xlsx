@@ -8,7 +8,9 @@ import type { SheetRow } from './ooxml/sheet.js'
 // 16 進表記や真偽値まで暗黙に通ってしまうため、受理形式を明示的に限定する
 const DECIMAL_RE = /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/
 
-/** 解決済み値を列型に強制する */
+/**
+ * 解決済み値を列型に強制する
+ */
 function coerce(
   type: ColumnType,
   resolved: Cell,
@@ -71,6 +73,7 @@ export function applySchema(
       const cell = sr.cells[header]
       const resolved: Cell = cell ? cell.value : null
 
+      // 空セル: defaultValue で補完、無ければ required ならエラー・任意なら null
       if (resolved === null || resolved === '') {
         if (column.defaultValue !== undefined) out[column.prop] = column.defaultValue
         else if (column.required)
@@ -79,6 +82,7 @@ export function applySchema(
         continue
       }
 
+      // ユーザー validate を先に通す
       // validate はユーザーコールバック。throw しても parse 全体を巻き込まず行エラーに落とす
       if (column.validate) {
         let message: string | null
@@ -93,6 +97,7 @@ export function applySchema(
         }
       }
 
+      // 列型へ強制する。失敗は値を捨てて行エラーに
       const result = coerce(column.type, resolved, cell?.raw, utc)
       if ('error' in result) {
         rowErrors.push({ row: sr.rowNum, column: header, value: resolved, message: result.error })
@@ -101,6 +106,7 @@ export function applySchema(
       out[column.prop] = result.value
     }
 
+    // 1 列でも失敗した行は data から落とし、エラーだけ集める
     if (rowErrors.length > 0) errors.push(...rowErrors)
     else data.push(out)
   }
