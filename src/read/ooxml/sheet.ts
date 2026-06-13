@@ -17,6 +17,17 @@ export type ReadSheetResult = { headers: string[]; rows: SheetRow[] }
 /** シート上に存在した行（列インデックス → raw セル） */
 type PresentRow = { rowNum: number; cells: Map<number, RawCell> }
 
+/**
+ * 空セルの定義（解決後の値）
+ *
+ * `null`（欠落セル）と `''`（空文字セル）を空とみなす。ヘッダー検出・ヘッダー構築・
+ * 空行スキップで判定がズレると、空文字のみの行がヘッダーに選ばれて結果が黙って
+ * 空になる等の不整合を生むため、一箇所に集約する。
+ */
+function isBlank(value: Cell): boolean {
+  return value === null || value === ''
+}
+
 /** sheetData をトークン走査し、存在する行を列インデックス付きで取り出す */
 function collectRows(xml: string): PresentRow[] {
   const rows: PresentRow[] = []
@@ -184,10 +195,10 @@ export function readSheet(
   let present = collectRows(xml)
   if (range) present = present.filter((r) => r.rowNum >= range.minRow && r.rowNum <= range.maxRow)
 
-  // 行が非空か（範囲内の列に非 null 値があるか）
+  // 行が非空か（範囲内の列に空でない値があるか）
   const isNonEmpty = (r: PresentRow): boolean => {
     for (const [col, raw] of r.cells) {
-      if (inColRange(col) && resolveCell(raw, ctx) !== null) return true
+      if (inColRange(col) && !isBlank(resolveCell(raw, ctx))) return true
     }
     return false
   }
@@ -202,7 +213,7 @@ export function readSheet(
     for (const [col, raw] of sorted) {
       if (!inColRange(col)) continue
       const value = resolveCell(raw, ctx)
-      if (value === null || value === '') continue
+      if (isBlank(value)) continue
       headerCols.push({ col, key: String(value) })
     }
   }
@@ -218,7 +229,7 @@ export function readSheet(
     for (const { col, key } of headerCols) {
       const raw = r.cells.get(col)
       const value = raw ? resolveCell(raw, ctx) : null
-      if (value !== null) hasValue = true
+      if (!isBlank(value)) hasValue = true
       cells[key] = { value, raw: raw ? (raw.value ?? raw.inlineText) : undefined }
     }
     if (skipEmpty && !hasValue) continue
@@ -257,7 +268,7 @@ export function readSheetArrays(
       if (!inColRange(col)) continue
       const value = resolveCell(raw, ctx)
       values.set(col, value)
-      if (value !== null) {
+      if (!isBlank(value)) {
         hasValue = true
         if (col > rightCol) rightCol = col
       }

@@ -72,6 +72,31 @@ describe('readSheet エッジ', () => {
     expect(readSheet(xml, ctx(), { headerRow: 99 }).headers).toEqual([])
   })
 
+  it('空文字のみの行はヘッダーに選ばず、次の非空行をヘッダーにする', () => {
+    // 1 行目は <t></t> の空文字のみ。!== null 判定だと「非空」と誤判定されヘッダーに
+    // 選ばれ、ヘッダー構築は '' を除外するため headers が空→全行スキップで黙って空になっていた
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t></t></is></c></row>' +
+        '<row r="2"><c r="A2" t="inlineStr"><is><t>名前</t></is></c></row>' +
+        '<row r="3"><c r="A3" t="inlineStr"><is><t>Alice</t></is></c></row>',
+    )
+    const { headers, rows } = readSheet(xml, ctx())
+    expect(headers).toEqual(['名前'])
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.cells.名前?.value).toBe('Alice')
+  })
+
+  it('空文字のみのデータ行は空行として skipEmptyRows で除外する', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>名前</t></is></c></row>' +
+        '<row r="2"><c r="A2" t="inlineStr"><is><t></t></is></c></row>' +
+        '<row r="3"><c r="A3" t="inlineStr"><is><t>Bob</t></is></c></row>',
+    )
+    const { rows } = readSheet(xml, ctx())
+    // 空文字のみの 2 行目は落ち、3 行目だけが残る
+    expect(rows.map((r) => r.cells.名前?.value)).toEqual(['Bob'])
+  })
+
   it('列のみ range "B:C" は全行・指定列に限定する', () => {
     const xml = sheet(
       '<row r="1"><c r="A1" t="inlineStr"><is><t>名前</t></is></c><c r="B1" t="inlineStr"><is><t>年齢</t></is></c><c r="C1" t="inlineStr"><is><t>備考</t></is></c></row>' +
@@ -140,5 +165,14 @@ describe('readSheetArrays エッジ（列インデックスの増幅対策）', 
     const rows = readSheetArrays(xml, ctx())
     expect(rows[0]?.length).toBe(16384)
     expect(rows[0]?.[16383]).toBe(9)
+  })
+
+  it('空文字のみの行は空行として除外する（null と同じ扱い）', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>x</t></is></c></row>' +
+        '<row r="2"><c r="A2" t="inlineStr"><is><t></t></is></c></row>',
+    )
+    // 2 行目（空文字のみ）は落ち、1 行目だけが矩形で残る
+    expect(readSheetArrays(xml, ctx())).toEqual([['x']])
   })
 })
