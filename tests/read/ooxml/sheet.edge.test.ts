@@ -1,11 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import type { ResolveContext } from '../../../src/read/ooxml/cells.js'
-import { RangeFormatError, readSheet, readSheetArrays } from '../../../src/read/ooxml/sheet.js'
+import {
+  OptionError,
+  RangeFormatError,
+  readSheet,
+  readSheetArrays,
+} from '../../../src/read/ooxml/sheet.js'
 import type { Styles } from '../../../src/read/ooxml/styles.js'
 
 const ctx = (sharedStrings: string[] = []): ResolveContext => ({
   sharedStrings,
   styles: { isDate: () => false } as Styles,
+  date1904: false,
+  utc: false,
+})
+
+// 全セルを日付として解決する ctx（numFmt 日付書式の代用）
+const dateCtx = (): ResolveContext => ({
+  sharedStrings: [],
+  styles: { isDate: () => true } as Styles,
   date1904: false,
   utc: false,
 })
@@ -70,6 +83,26 @@ describe('readSheet エッジ', () => {
   it('headerRow が存在しない行を指すとヘッダー空', () => {
     const xml = sheet('<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>')
     expect(readSheet(xml, ctx(), { headerRow: 99 }).headers).toEqual([])
+  })
+
+  it('headerRow の 0 以下・非整数は OptionError（黙って空結果にしない）', () => {
+    const xml = sheet('<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>')
+    expect(() => readSheet(xml, ctx(), { headerRow: 0 })).toThrow(OptionError)
+    expect(() => readSheet(xml, ctx(), { headerRow: -1 })).toThrow(OptionError)
+    expect(() => readSheet(xml, ctx(), { headerRow: 1.5 })).toThrow(OptionError)
+    // 正常値（1 以上の整数）は通る
+    expect(readSheet(xml, ctx(), { headerRow: 1 }).headers).toEqual(['H'])
+  })
+
+  it('日付セルのヘッダー名は実装依存の Date.toString でなく ISO 8601 にする', () => {
+    // 43831 = 2020-01-01。日付書式の見出しでも安定した ISO 文字列をキーにする
+    const xml = sheet(
+      '<row r="1"><c r="A1" s="1"><v>43831</v></c></row>' +
+        '<row r="2"><c r="A2" t="inlineStr"><is><t>x</t></is></c></row>',
+    )
+    const { headers } = readSheet(xml, dateCtx())
+    expect(headers[0]).toMatch(/^2020-01-01/)
+    expect(headers[0]).not.toMatch(/GMT|\(/) // Date.toString 由来でない
   })
 
   it('空文字のみの行はヘッダーに選ばず、次の非空行をヘッダーにする', () => {
@@ -144,6 +177,8 @@ describe('readSheet エッジ', () => {
     expect(() => readSheet(xml, ctx(), { range: '1A:2' })).toThrow(RangeFormatError)
     // 開始・終了で形式が食い違う混在も不正
     expect(() => readSheet(xml, ctx(), { range: 'A1:D' })).toThrow(RangeFormatError)
+    // コロン過多は "A1:B2" に黙って丸めず不正として弾く
+    expect(() => readSheet(xml, ctx(), { range: 'A1:B2:C3' })).toThrow(RangeFormatError)
   })
 
   it('XFD 超の列を含む range は RangeFormatError を投げる（矩形化の巨大確保を防ぐ）', () => {

@@ -23,6 +23,7 @@ export type FileErrorCode =
   | 'invalid-xlsx' // 必要パーツ(workbook/sheet 等)が欠落
   | 'sheet-not-found' // 指定シートが無い
   | 'invalid-range' // range オプションの形式が不正
+  | 'invalid-option' // オプション/スキーマの指定値が不正（headerRow の非整数・スキーマ prop 重複 等）
   | 'duplicate-header' // ヘッダー列名が重複し列の対応が一意に決まらない
   | 'missing-column' // スキーマの必須列（required・defaultValue 無し）がヘッダーに無い
   | 'unsupported-environment' // DecompressionStream 非対応

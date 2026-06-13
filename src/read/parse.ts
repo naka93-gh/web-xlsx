@@ -1,3 +1,4 @@
+import { findDuplicateProp } from '../core/schema.js'
 import type {
   Cell,
   FileError,
@@ -12,6 +13,7 @@ import type {
 import { openZip, ZipError } from './io/zip.js'
 import type { ResolveContext } from './ooxml/cells.js'
 import {
+  OptionError,
   RangeFormatError,
   type ReadSheetResult,
   readSheet,
@@ -41,6 +43,10 @@ function toFileError(error: unknown): FileError {
   // range オプションの形式不正はファイル破損と区別する
   if (error instanceof RangeFormatError) {
     return { code: 'invalid-range', message: error.message }
+  }
+  // headerRow 等オプションの指定値不正もファイル破損と区別する
+  if (error instanceof OptionError) {
+    return { code: 'invalid-option', message: error.message }
   }
   return {
     code: 'invalid-xlsx',
@@ -204,6 +210,17 @@ export async function parse(
   if ('arrays' in result) return { ok: true, data: result.arrays, errors: [] }
 
   if (schema) {
+    // 複数列が同じ prop だと applySchema で後勝ち上書きされ黙って消える → 入口で弾く
+    const dupProp = findDuplicateProp(schema)
+    if (dupProp !== undefined) {
+      return {
+        ok: false,
+        error: {
+          code: 'invalid-option',
+          message: `スキーマの prop が重複しています: "${dupProp}"`,
+        },
+      }
+    }
     const missing = findMissingRequiredHeaders(schema, result.sheet.headers)
     if (missing.length > 0) {
       return {

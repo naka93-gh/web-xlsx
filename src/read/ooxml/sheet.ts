@@ -1,6 +1,7 @@
 // ワークシート（xl/worksheets/sheetN.xml）の解析 — 行/セルを組み立てる
 
 import { columnToIndex, MAX_COL_INDEX } from '../../core/a1.js'
+import { formatIsoDate } from '../../core/date.js'
 import type { Cell, ParseOptions } from '../../core/types.js'
 import { tokenize } from '../io/xml.js'
 import { parseRef, type RawCell, type ResolveContext, resolveCell } from './cells.js'
@@ -129,6 +130,14 @@ export class RangeFormatError extends Error {
   }
 }
 
+/** headerRow 等オプションの指定値が不正なときに投げる */
+export class OptionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'OptionError'
+  }
+}
+
 /** range の端点 "A1"/"A"(列のみ)/"1"(行のみ) を分解。欠けた次元は null。解析不能なら null を返す */
 function parseEndpoint(ref: string): { col: number | null; row: number | null } | null {
   const m = /^([A-Za-z]+)?(\d+)?$/.exec(ref)
@@ -163,7 +172,10 @@ function parseRange(range: string): {
   minRow: number
   maxRow: number
 } {
-  const [a, b] = range.split(':')
+  const parts = range.split(':')
+  // "A1:B2:C3" のようなコロン過多は黙って "A1:B2" に丸めず不正として弾く
+  if (parts.length > 2) throw new RangeFormatError(`range の形式が不正です: "${range}"`)
+  const [a, b] = parts
   const start = a ? parseEndpoint(a) : null
   const end = b !== undefined ? parseEndpoint(b) : start
   if (!start || !end) throw new RangeFormatError(`range の形式が不正です: "${range}"`)
@@ -189,6 +201,14 @@ export function readSheet(
   ctx: ResolveContext,
   options: Pick<ParseOptions, 'headerRow' | 'range' | 'skipEmptyRows'> = {},
 ): ReadSheetResult {
+  // headerRow は 1 始まりの行番号。0 以下・非整数は黙って空結果になるため明示エラーに
+  if (options.headerRow !== undefined) {
+    const h = options.headerRow
+    if (!Number.isInteger(h) || h < 1) {
+      throw new OptionError(`headerRow は 1 以上の整数で指定してください: ${h}`)
+    }
+  }
+
   const range = options.range ? parseRange(options.range) : undefined
   const inColRange = (col: number) => !range || (col >= range.minCol && col <= range.maxCol)
 
@@ -214,7 +234,9 @@ export function readSheet(
       if (!inColRange(col)) continue
       const value = resolveCell(raw, ctx)
       if (isBlank(value)) continue
-      headerCols.push({ col, key: String(value) })
+      // Date は実装依存の Date.toString でなく ISO 8601 にする（schema 側 formatIsoDate と対称）
+      const key = value instanceof Date ? formatIsoDate(value, ctx.utc) : String(value)
+      headerCols.push({ col, key })
     }
   }
   const headers = headerCols.map((h) => h.key)

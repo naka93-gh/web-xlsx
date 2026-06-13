@@ -1,5 +1,6 @@
 // 書き出しオーケストレーション（行 → セル → XML パーツ → ZIP → bytes）
 
+import { findDuplicateProp } from '../core/schema.js'
 import type { Cell, InferRow, Row, Schema } from '../core/types.js'
 import { buildZip, type ZipEntry } from './io/zip.js'
 import { sheetXml } from './ooxml/sheet.js'
@@ -108,6 +109,13 @@ export async function build(
   args: { schema?: Schema; options?: BuildOptions } = {},
 ): Promise<Uint8Array> {
   const { schema, options = {} } = args
+  // 複数列が同じ prop だと同じソース値が複数列に複製される → 設定ミスとして弾く
+  if (schema) {
+    const dupProp = findDuplicateProp(schema)
+    if (dupProp !== undefined) {
+      throw new Error(`スキーマの prop が重複しています: "${dupProp}"`)
+    }
+  }
   const style = options.style ?? true
   const utc = options.utc ?? false
   const { headers, matrix } = schema ? fromSchema(rows, schema) : fromRows(rows as Row[])

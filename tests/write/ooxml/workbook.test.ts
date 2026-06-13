@@ -29,6 +29,18 @@ describe('sanitizeSheetName（workbookXml 経由）', () => {
     expect(sheetName('  名簿  ')).toBe('名簿')
   })
 
+  it('先頭・末尾のアポストロフィは除去する（Excel が許さない）', () => {
+    expect(sheetName("'名簿'")).toBe('名簿')
+    expect(sheetName("''Sheet''")).toBe('Sheet')
+    // 中間のアポストロフィは残す
+    expect(sheetName("a'b")).toBe("a'b")
+  })
+
+  it('予約名 History（大小無視）は退避する', () => {
+    expect(sheetName('History')).toBe('_History')
+    expect(sheetName('history')).toBe('_History')
+  })
+
   it('属性として & と " はエスケープされる', () => {
     // 禁止文字ではないので残り、属性エスケープで実体化される
     expect(sheetName('A&B"C')).toBe('A&amp;B&quot;C')

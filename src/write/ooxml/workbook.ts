@@ -21,11 +21,14 @@ export function rootRelsXml(): string {
 </Relationships>`
 }
 
-/** シート名を Excel の制約（31 文字・禁止文字除去）に丸める */
+/** シート名を Excel の制約（31 文字・禁止文字除去・先頭末尾アポストロフィ/空白・予約名）に丸める */
 function sanitizeSheetName(name: string): string {
-  const cleaned = name.replace(/[\\/?*[\]:]/g, '_').trim()
+  // 先頭/末尾のアポストロフィと空白は Excel が許さないため除去する
+  const cleaned = name.replace(/[\\/?*[\]:]/g, '_').replace(/^[\s']+|[\s']+$/g, '')
   const safe = cleaned.length > 0 ? cleaned : 'Sheet1'
-  return safe.length > 31 ? safe.slice(0, 31) : safe
+  const clamped = safe.length > 31 ? safe.slice(0, 31) : safe
+  // "History" は Excel の予約名（大小無視）。そのままでは使えないため退避する
+  return clamped.toLowerCase() === 'history' ? '_History' : clamped
 }
 
 /** xl/workbook.xml — 単一シートを宣言 */

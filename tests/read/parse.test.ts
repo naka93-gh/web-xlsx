@@ -134,6 +134,29 @@ describe('parse（低レベル E2E）', () => {
     expect(row[protoKey]).toBe('Alice')
   })
 
+  it('prop が重複するスキーマは invalid-option（後勝ち上書きでデータが消えるのを防ぐ）', async () => {
+    const schema = {
+      氏名: { prop: 'name', type: 'string' },
+      名前: { prop: 'name', type: 'string' },
+    } satisfies Schema
+    const result = await parse(await xlsx(), { schema })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error.code).toBe('invalid-option')
+      expect(result.error.message).toContain('name')
+    }
+  })
+
+  it('headerRow の不正値（0・非整数）は invalid-option', async () => {
+    const zero = await parse(await xlsx(), { options: { headerRow: 0 } })
+    expect(zero.ok).toBe(false)
+    if (!zero.ok) expect(zero.error.code).toBe('invalid-option')
+
+    const frac = await parse(await xlsx(), { options: { headerRow: 1.5 } })
+    expect(frac.ok).toBe(false)
+    if (!frac.ok) expect(frac.error.code).toBe('invalid-option')
+  })
+
   it('ZIP は開けるが中身破損（中央ディレクトリ不正）は invalid-xlsx', async () => {
     // EOCD は見つかるが cdOffset 先に CDH シグネチャが無い ZIP を組む
     const bytes = new Uint8Array(8 + 22) // [壊れた CD 領域][EOCD]

@@ -71,6 +71,14 @@ describe('build → parse ラウンドトリップ（スキーマ）', () => {
     expect(result.data[0]?.age).toBe(42)
     expect(result.data[0]?.hireDate).toBeInstanceOf(Date)
   })
+
+  it('prop が重複するスキーマは throw する（同じソース値の複製を防ぐ）', async () => {
+    const dup = {
+      氏名: { prop: 'name', type: 'string' },
+      名前: { prop: 'name', type: 'string' },
+    } satisfies Schema
+    await expect(build([{ name: '山田' }], { schema: dup })).rejects.toThrow(/prop が重複/)
+  })
 })
 
 describe('build オプション', () => {
