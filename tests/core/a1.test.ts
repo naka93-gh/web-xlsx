@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { colName, columnToIndex } from '../../src/core/a1.js'
+import { columnToIndex, indexToColumn } from '../../src/core/a1.js'
 
 describe('columnToIndex（列文字 → 0 始まりインデックス）', () => {
   it('1 文字', () => {
@@ -25,27 +25,27 @@ describe('columnToIndex（列文字 → 0 始まりインデックス）', () =>
   })
 })
 
-describe('colName（0 始まりインデックス → 列文字）', () => {
+describe('indexToColumn（0 始まりインデックス → 列文字）', () => {
   it('境界', () => {
-    expect(colName(0)).toBe('A')
-    expect(colName(25)).toBe('Z')
-    expect(colName(26)).toBe('AA')
-    expect(colName(701)).toBe('ZZ')
-    expect(colName(702)).toBe('AAA')
-    expect(colName(753)).toBe('ABZ')
+    expect(indexToColumn(0)).toBe('A')
+    expect(indexToColumn(25)).toBe('Z')
+    expect(indexToColumn(26)).toBe('AA')
+    expect(indexToColumn(701)).toBe('ZZ')
+    expect(indexToColumn(702)).toBe('AAA')
+    expect(indexToColumn(753)).toBe('ABZ')
   })
 })
 
 describe('往復変換', () => {
-  it('colName(columnToIndex(x)) === x を境界含め満たす', () => {
+  it('indexToColumn(columnToIndex(x)) === x を境界含め満たす', () => {
     for (const x of ['A', 'Z', 'AA', 'AB', 'AZ', 'BA', 'ZZ', 'AAA', 'ABZ', 'XFD']) {
-      expect(colName(columnToIndex(x))).toBe(x)
+      expect(indexToColumn(columnToIndex(x))).toBe(x)
     }
   })
 
-  it('columnToIndex(colName(i)) === i を連続範囲で満たす', () => {
+  it('columnToIndex(indexToColumn(i)) === i を連続範囲で満たす', () => {
     for (let i = 0; i < 1000; i++) {
-      expect(columnToIndex(colName(i))).toBe(i)
+      expect(columnToIndex(indexToColumn(i))).toBe(i)
     }
   })
 })

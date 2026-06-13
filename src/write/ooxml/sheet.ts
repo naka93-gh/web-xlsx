@@ -1,6 +1,6 @@
 // worksheet（sheet1.xml）生成。セル値・先頭行固定・列幅自動
 
-import { colName } from '../../core/a1.js'
+import { indexToColumn } from '../../core/a1.js'
 import { dateToSerial } from '../../core/serial.js'
 import type { Cell } from '../../core/types.js'
 import { DECL, NS_MAIN } from './consts.js'
@@ -59,7 +59,7 @@ function rowXml(rowIndex: number, cells: Cell[], style: number, utc: boolean): s
   const rowNum = rowIndex + 1
   let body = ''
   for (let c = 0; c < cells.length; c++) {
-    body += cellXml(`${colName(c)}${rowNum}`, cells[c] ?? null, style, utc)
+    body += cellXml(`${indexToColumn(c)}${rowNum}`, cells[c] ?? null, style, utc)
   }
   return `<row r="${rowNum}">${body}</row>`
 }

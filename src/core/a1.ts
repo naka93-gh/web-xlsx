@@ -18,8 +18,8 @@ export function columnToIndex(letters: string): number {
   return n - 1
 }
 
-/** 0 始まりの列インデックスを列文字（A, B, ..., Z, AA, ...）に変換する */
-export function colName(index: number): string {
+/** 0 始まりの列インデックスを列文字（A, B, ..., Z, AA, ...）に変換する（columnToIndex の逆） */
+export function indexToColumn(index: number): string {
   let n = index + 1
   let s = ''
   while (n > 0) {
