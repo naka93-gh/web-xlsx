@@ -14,16 +14,16 @@
 
 ## 使い方
 
-スキーマを定義して `parse` / `parseFile` / `build` の第 2 引数（`schema`）に渡す。
+スキーマは `defineSchema(...)` で定義し、`parse` / `parseFile` / `build` の第 2 引数（`schema`）に渡す。`defineSchema` で包むと `prop` のリテラルが保たれ `InferRow` が正しく推論される（素の `satisfies Schema` は `prop` が `string` に widen し、行の型が全列の union に潰れる）。
 
 ```ts
-import { parse, type Schema } from "web-xlsx";
+import { parse, defineSchema } from "web-xlsx";
 
-const schema = {
+const schema = defineSchema({
   名前: { prop: "name", type: "string", required: true },
   年齢: { prop: "age", type: "number" },
   入社日: { prop: "hireDate", type: "date" },
-} satisfies Schema;
+});
 
 const result = await parse(bytes, { schema });
 if (result.ok) {
@@ -66,16 +66,19 @@ if (result.ok) {
 
 ## 型推論（InferRow）
 
-スキーマに `satisfies Schema` を付けると、`InferRow<S>` で行の型を引ける。`prop` がキー、`type` が値の型。`required: true` でない列は `null` 許容になる。
+`defineSchema(...)` で定義すると、`InferRow<S>` で行の型を引ける。`prop` がキー、`type` が値の型。`required: true` でない列は `null` 許容になる。
 
 ```ts
-const schema = {
+const schema = defineSchema({
   名前: { prop: "name", type: "string", required: true },
   年齢: { prop: "age", type: "number" },
-} satisfies Schema;
+});
 
 type Employee = InferRow<typeof schema>;
 // { name: string; age: number | null }
 ```
 
 `parse` / `parseFile` / `build` はスキーマを渡すとこの型を使うので、普段は明示不要。
+
+> [!NOTE]
+> 素の `const schema = {...} satisfies Schema` は `prop` が `string` に widen し、`InferRow` のキー再割り当てが index signature に潰れて行の型が全列の union になる。`defineSchema`（`const` 型パラメータの恒等関数）で包むとリテラルが保たれ正しく推論される。

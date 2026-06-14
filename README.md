@@ -36,13 +36,13 @@ bun add web-xlsx
 ### read
 
 ```ts
-import { parseFile, type Schema } from "web-xlsx";
+import { parseFile, defineSchema } from "web-xlsx";
 
-const schema = {
+const schema = defineSchema({
   名前: { prop: "name", type: "string", required: true },
   年齢: { prop: "age", type: "number" },
   入社日: { prop: "hireDate", type: "date" },
-} satisfies Schema;
+});
 
 const result = await parseFile(file, { schema });
 if (result.ok) {
