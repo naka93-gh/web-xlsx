@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ResolveContext } from '../../../src/read/ooxml/cells.js'
-import {
-  OptionError,
-  RangeFormatError,
-  readSheet,
-  readSheetArrays,
-} from '../../../src/read/ooxml/sheet.js'
+import { RangeFormatError } from '../../../src/read/ooxml/range.js'
+import { OptionError, readSheet, readSheetArrays } from '../../../src/read/ooxml/sheet.js'
 import type { Styles } from '../../../src/read/ooxml/styles.js'
 
 const ctx = (sharedStrings: string[] = []): ResolveContext => ({

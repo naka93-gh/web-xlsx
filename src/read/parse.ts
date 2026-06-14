@@ -12,9 +12,9 @@ import type {
 } from '../core/types.js'
 import { openZip, ZipError } from './io/zip.js'
 import type { ResolveContext } from './ooxml/cells.js'
+import { RangeFormatError } from './ooxml/range.js'
 import {
   OptionError,
-  RangeFormatError,
   type ReadSheetResult,
   readSheet,
   readSheetArrays,
