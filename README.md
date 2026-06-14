@@ -26,7 +26,7 @@ bun add web-xlsx
 ```
 
 - ESM 専用
-- Node.js 20.12 以上（21.2+ / 22+ も可）
+- Node.js 22 以上
 - ブラウザは deflate-raw 対応の現行版
 
 ## Quick Start

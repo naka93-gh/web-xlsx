@@ -15,9 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # ライブラリ実行下限は 20.12（engines）だが、テスト実行系（vitest/vite/rolldown）は
-        # Node ^20.19 || >=22.12 を要求するため、CI の 20.x 下限は 20.19 に合わせる
-        node-version: ["20.19", "22", "24"]
+        node-version: ["22", "24"]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -49,7 +47,6 @@ jobs:
   # ブランチ保護の必須チェックを安定させるゲート。
   # check は matrix 展開で名前が変わる（"check (22)" 等）ため必須コンテキストに
   # 直接指定すると食い違う。必須チェックはこの gate 1 本だけを指定すれば、
-  # matrix や Node 範囲（0.4.0 で 22+ に絞る予定）を変えても保護設定は無修正で済む。
   gate:
     if: always()
     needs: [check, size]
