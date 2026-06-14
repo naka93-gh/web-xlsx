@@ -104,6 +104,11 @@ function collectRows(xml: string): PresentRow[] {
         cell = raw
         valueBuf = ''
         inlineBuf = ''
+        // 前セルで閉じタグが欠けた場合に走査フラグが次セルへ漏れるのを防ぐ
+        inV = false
+        inIs = false
+        inT = false
+        phonetic = 0
         if (token.selfClosing) {
           row?.cells.set(col, raw)
           cell = null

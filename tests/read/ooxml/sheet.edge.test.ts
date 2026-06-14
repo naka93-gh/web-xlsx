@@ -171,6 +171,26 @@ describe('readSheet エッジ', () => {
     expect(rows[0]?.cells.H2?.value).toBe(9)
   })
 
+  it('未閉じ <v> が後続のインライン文字列セルを黙って欠落させない（走査フラグの漏れ防止）', () => {
+    // A2 の <v> を閉じずに B2 へ。inV が漏れると B2 の "txt" が値側に吸われ inlineText が空になる
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>H1</t></is></c><c r="B1" t="inlineStr"><is><t>H2</t></is></c></row>' +
+        '<row r="2"><c r="A2"><v>99<c r="B2" t="inlineStr"><is><t>txt</t></is></c></row>',
+    )
+    const { rows } = readSheet(xml, ctx())
+    expect(rows[0]?.cells.H2?.value).toBe('txt')
+  })
+
+  it('未閉じ <rPh>（ふりがな）が後続セルのインライン文字列を黙って欠落させない（走査フラグの漏れ防止）', () => {
+    // A2 の <rPh> を閉じずに B2 へ。phonetic が漏れると B2 の "本文" がふりがな扱いで除外され消える
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="inlineStr"><is><t>H1</t></is></c><c r="B1" t="inlineStr"><is><t>H2</t></is></c></row>' +
+        '<row r="2"><c r="A2" t="inlineStr"><is><rPh><t>よみ</t><c r="B2" t="inlineStr"><is><t>本文</t></is></c></row>',
+    )
+    const { rows } = readSheet(xml, ctx())
+    expect(rows[0]?.cells.H2?.value).toBe('本文')
+  })
+
   it('形式が不正な range は RangeFormatError を投げる', () => {
     const xml = sheet('<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>')
     expect(() => readSheet(xml, ctx(), { range: '???' })).toThrow(RangeFormatError)
