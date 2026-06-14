@@ -19,7 +19,8 @@ export function defineSchema<const S extends Schema>(schema: S): S {
 }
 
 /**
- * 文字列列の最初の重複を返す（無ければ undefined）
+ * 文字列の並びから最初に重複した値を返す
+ * 無ければ undefined
  */
 export function firstDuplicate(values: Iterable<string>): string | undefined {
   const seen = new Set<string>()
@@ -31,7 +32,8 @@ export function firstDuplicate(values: Iterable<string>): string | undefined {
 }
 
 /**
- * スキーマ内で重複する `prop` を返す（無ければ undefined）
+ * スキーマ内で重複する `prop` を返す
+ * 無ければ undefined
  *
  * 複数列が同じ prop を持つと、読みは後勝ちで値が黙って上書きされ、書きは同じ
  * ソース値が複数列に複製される。ヘッダー重複（duplicate-header）と対称に入口で弾く。
