@@ -1,0 +1,6 @@
+# pnpm 11 の設定ホーム（旧 .npmrc / package.json "pnpm" から移設）
+strictPeerDependencies: true
+saveExact: false
+# esbuild は native バイナリ取得のため install スクリプトの実行を許可する
+allowBuilds:
+  esbuild: true
