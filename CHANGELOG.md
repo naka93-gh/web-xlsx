@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+書き出しのエラー戻り値を read と統一。
+
+- **破壊的変更**: `build` の戻り値を `Promise<Uint8Array>` から `Promise<BuildResult>`（`{ ok: false; error: FileError } | { ok: true; data: Uint8Array }`）に変更した。read の `ParseResult` と対称の Result 型で、失敗を例外でなく戻り値で扱う。成功時は `result.data` がバイト列
+- **破壊的変更**: 対応 Node を `>=22.0.0` に引き上げた（Node 20 が 2026-04-30 EOL のため）。技術下限は 20.12 のままだが lifecycle 判断で現役 LTS に絞る
+- スキーマの `prop` 重複は throw でなく `ok: false`（`code: 'invalid-option'`）で返すようにした。エラー型は read と共通の `FileError`
+- `web-xlsx/write` から `BuildResult` / `FileError` / `FileErrorCode` を公開した
+- `InferRow` がスキーマの `prop` widen で行の型を全列 union に潰す問題を修正した。スキーマは `defineSchema(...)` で定義するとリテラルが保たれ正しく推論される。`defineSchema` を `web-xlsx` / `web-xlsx/write` から公開した
+
 ## 0.3.1
 
 実ファイル互換性のバグ修正と入力検証の強化。
