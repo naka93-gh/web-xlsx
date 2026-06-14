@@ -11,7 +11,7 @@ export { parse, parseFile } from './read/parse.js' // バイト列 / File・Blob
 // ───────────────────────────────────────────
 // オプション
 // ───────────────────────────────────────────
-export type { ParseArgs, ParseArgsWithSchema, ParseOptions, ZipLimits } from './core/types.js' // parse の第2引数 / 取り込み options / 解凍サイズ上限
+export type { ParseArgs, ParseArgsWithSchema, ParseOptions, ZipLimits } from './read/types.js' // parse の第2引数 / 取り込み options / 解凍サイズ上限
 
 // ───────────────────────────────────────────
 // スキーマ（型付き取込）
@@ -22,5 +22,6 @@ export type { Schema, Column, ColumnType, InferRow } from './core/types.js' // �
 // ───────────────────────────────────────────
 // 結果・値
 // ───────────────────────────────────────────
-export type { ParseResult, Row, Cell } from './core/types.js' // 返り値 / 行 / セル値
-export type { RowError, FileError, FileErrorCode } from './core/types.js' // 行単位 / ファイル単位のエラー
+export type { Row, Cell } from './core/types.js' // 行 / セル値
+export type { ParseResult, RowError } from './read/types.js' // 返り値 / 行単位エラー
+export type { FileError, FileErrorCode } from './core/types.js' // ファイル単位のエラー（read/write 共通）

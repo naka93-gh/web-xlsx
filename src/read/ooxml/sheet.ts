@@ -1,7 +1,8 @@
 // ワークシートをヘッダー解決つき行データ／配列に変換する
 
 import { formatIsoDate } from '../../core/date.js'
-import type { Cell, ParseOptions } from '../../core/types.js'
+import type { Cell } from '../../core/types.js'
+import type { ParseOptions } from '../types.js'
 import { type ResolveContext, resolveCell } from './cells.js'
 import { type CellRange, parseRange } from './range.js'
 import { collectRows, type PresentRow } from './rows.js'

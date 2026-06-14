@@ -1,54 +1,12 @@
 // 書き出しオーケストレーション（行 → セル → XML パーツ → ZIP → bytes）
 
 import { findDuplicateProp } from '../core/schema.js'
-import type { BuildResult, Cell, InferRow, Row, Schema } from '../core/types.js'
+import type { Cell, InferRow, Row, Schema } from '../core/types.js'
 import { buildZip, type ZipEntry } from './io/zip.js'
 import { sheetXml } from './ooxml/sheet.js'
 import { stylesXml } from './ooxml/styles.js'
 import { contentTypesXml, rootRelsXml, workbookRelsXml, workbookXml } from './ooxml/workbook.js'
-
-/**
- * 書き出しオプション
- */
-export type BuildOptions = {
-  /**
-   * シート名（既定: "Sheet1"）
-   */
-  sheetName?: string
-
-  /**
-   * 激安スタイル（ヘッダー太字 + 先頭行固定 + 列幅自動）を付ける（既定: true）
-   *
-   * `false` で一括無効化。日付の表示書式は値の正しさに必須なので常に有効
-   */
-  style?: boolean
-
-  /**
-   * Date を UTC 固定でシリアル値にする（既定: false=ローカルの壁時計）
-   *
-   * `parse` の同名オプションと対。読み書きで同じ値を使えば往復は一致する
-   */
-  utc?: boolean
-}
-
-/**
- * build の第2引数
- *
- * 列順・ヘッダーを決める `schema` と、出力調整の `options`（{@link BuildOptions}）を
- * 別キーに分けて渡す。どちらも省略できる
- */
-export type BuildArgs = {
-  schema?: never
-  options?: BuildOptions
-}
-
-/**
- * スキーマ付きの第2引数
- */
-export type BuildArgsWithSchema<S extends Schema> = {
-  schema: S
-  options?: BuildOptions
-}
+import type { BuildArgs, BuildArgsWithSchema, BuildOptions, BuildResult } from './types.js'
 
 /**
  * unknown 値を Cell に寄せる（Cell 外の型は String 化、未入力は null）

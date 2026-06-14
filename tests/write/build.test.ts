@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { BuildResult, Schema } from '../../src/core/types.js'
+import type { Schema } from '../../src/core/types.js'
 import { parse } from '../../src/read/parse.js'
 import { build } from '../../src/write/build.js'
+import type { BuildResult } from '../../src/write/types.js'
 
 /** build の Result から成功時のバイト列を取り出す（失敗は即 throw してテストを落とす） */
 async function buildOk(result: Promise<BuildResult>): Promise<Uint8Array> {

@@ -1,15 +1,5 @@
 import { findDuplicateProp, firstDuplicate } from '../core/schema.js'
-import type {
-  Cell,
-  FileError,
-  InferRow,
-  ParseArgs,
-  ParseArgsWithSchema,
-  ParseOptions,
-  ParseResult,
-  Row,
-  Schema,
-} from '../core/types.js'
+import type { Cell, FileError, InferRow, Row, Schema } from '../core/types.js'
 import { openZip, ZipError } from './io/zip.js'
 import type { ResolveContext } from './ooxml/cells.js'
 import { RangeFormatError } from './ooxml/range.js'
@@ -24,6 +14,7 @@ import { parseSharedStrings } from './ooxml/strings.js'
 import { parseStyles, type Styles } from './ooxml/styles.js'
 import { openWorkbook, selectSheet } from './ooxml/workbook.js'
 import { applySchema } from './schema.js'
+import type { ParseArgs, ParseArgsWithSchema, ParseOptions, ParseResult } from './types.js'
 
 const EMPTY_STYLES: Styles = { isDate: () => false }
 
