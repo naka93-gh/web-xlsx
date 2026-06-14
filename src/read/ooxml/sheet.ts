@@ -7,7 +7,8 @@ import { tokenize } from '../io/xml.js'
 import { parseRef, type RawCell, type ResolveContext, resolveCell } from './cells.js'
 
 /**
- * 解決済みのセル（raw は精度対策で元の <v> テキストを保持）
+ * 解決済みのセル
+ * raw は大整数の桁落ち回避用に数値セルの元テキストのみ保持し、それ以外は undefined
  */
 export type SheetCell = { value: Cell; raw: string | undefined }
 
@@ -285,7 +286,8 @@ function buildDataRows(
       const raw = r.cells.get(col)
       const value = raw ? resolveCell(raw, ctx) : null
       if (!isBlank(value)) hasValue = true
-      cells[key] = { value, raw: raw ? (raw.value ?? raw.inlineText) : undefined }
+      // raw は桁落ち回避用に数値セルの元テキストだけ持つ
+      cells[key] = { value, raw: typeof value === 'number' ? raw?.value : undefined }
     }
     if (skipEmpty && !hasValue) continue
     rows.push({ rowNum: r.rowNum, cells })

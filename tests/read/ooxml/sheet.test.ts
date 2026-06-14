@@ -103,6 +103,16 @@ describe('readSheet', () => {
     expect(cell?.raw).toBe('12345678901234567')
     expect(typeof cell?.value).toBe('number')
   })
+
+  it('共有文字列セルの raw は index でなく undefined（raw は数値テキスト専用）', () => {
+    const xml = sheet(
+      '<row r="1"><c r="A1" t="s"><v>0</v></c></row>' + // 名前
+        '<row r="2"><c r="A2" t="s"><v>2</v></c></row>', // Alice（v=2 は共有文字列 index）
+    )
+    const cell = readSheet(xml, ctx()).rows[0]?.cells.名前
+    expect(cell?.value).toBe('Alice')
+    expect(cell?.raw).toBeUndefined() // 旧実装は index "2" が混入していた
+  })
 })
 
 describe('readSheetArrays（ヘッダー無し / Cell[][]）', () => {
