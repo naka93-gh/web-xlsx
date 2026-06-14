@@ -179,13 +179,13 @@ export function parse(
  *
  * @example
  * ```ts
- * const schema = {
+ * const schema = defineSchema({
  *   名前: { prop: 'name', type: 'string', required: true },
- * } satisfies Schema
+ * })
  * const result = await parse(bytes, { schema })
  * ```
  */
-export function parse<S extends Schema>(
+export function parse<const S extends Schema>(
   data: ArrayBuffer | Uint8Array,
   args: ParseArgsWithSchema<S>,
 ): Promise<ParseResult<InferRow<S>>>
@@ -257,7 +257,7 @@ export function parseFile(
 /**
  * スキーマ付き — 検証・型付けは {@link parse} と同じ
  */
-export function parseFile<S extends Schema>(
+export function parseFile<const S extends Schema>(
   file: File | Blob,
   args: ParseArgsWithSchema<S>,
 ): Promise<ParseResult<InferRow<S>>>

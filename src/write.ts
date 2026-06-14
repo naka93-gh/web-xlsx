@@ -16,6 +16,7 @@ export type { BuildArgs, BuildArgsWithSchema, BuildOptions } from './write/build
 // ───────────────────────────────────────────
 // スキーマ（読み取りと共用）
 // ───────────────────────────────────────────
+export { defineSchema } from './core/schema.js' // prop リテラルを保ち InferRow を正しく narrow させる定義ヘルパ
 export type { Schema, Column, ColumnType, InferRow } from './core/types.js' // 列定義と行型の推論
 
 // ───────────────────────────────────────────

@@ -172,14 +172,14 @@ export type Column =
 /**
  * スキーマ — ヘッダー名 → 列定義（{@link Column}）のマップ
  *
- * `satisfies Schema` を付けると {@link InferRow} で行の型を推論できる
+ * `defineSchema(...)` で包むと `prop` のリテラルが保たれ {@link InferRow} で行の型を正しく推論できる
  *
  * @example
  * ```ts
- * const schema = {
+ * const schema = defineSchema({
  *   名前: { prop: 'name', type: 'string', required: true },
  *   年齢: { prop: 'age', type: 'number' },
- * } satisfies Schema
+ * })
  * ```
  */
 export type Schema = Record<string, Column>
@@ -207,8 +207,6 @@ type PropValue<C extends Column> = C extends { required: true }
 /**
  * スキーマから行の型を推論する
  *
- * `prop` をキー、`type` を値の型にマップする（`required: true` でない列は `null` 許容）
- *
  * @example
  * ```ts
  * // { name: string; age: number | null }
@@ -216,7 +214,7 @@ type PropValue<C extends Column> = C extends { required: true }
  * ```
  */
 export type InferRow<S extends Schema> = {
-  [K in keyof S as S[K]['prop']]: PropValue<S[K]>
+  -readonly [K in keyof S as S[K]['prop']]: PropValue<S[K]>
 }
 
 // ───────────────────────────────────────────

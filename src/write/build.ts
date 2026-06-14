@@ -107,7 +107,7 @@ function fromSchema(
  *
  * スキーマのキー順が列順、キーがヘッダー、`prop` で各行の値を引く
  */
-export function build<S extends Schema>(
+export function build<const S extends Schema>(
   rows: InferRow<S>[],
   args: BuildArgsWithSchema<S>,
 ): Promise<BuildResult>
