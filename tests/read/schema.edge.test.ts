@@ -16,7 +16,7 @@ const first = (schema: Schema, cells: Record<string, unknown>) => {
 }
 
 describe('applySchema 型強制の分岐', () => {
-  it('boolean: 真値/偽値/文字列/数値/不正', () => {
+  it('boolean: 真値/偽値/文字列/数値を変換し不正はエラーにする', () => {
     const s = { f: { prop: 'f', type: 'boolean' } } satisfies Schema
     expect(first(s, { f: true }).value?.f).toBe(true)
     expect(first(s, { f: 'TRUE' }).value?.f).toBe(true)
@@ -25,7 +25,7 @@ describe('applySchema 型強制の分岐', () => {
     expect(first(s, { f: 'はい' }).errors[0]?.message).toBe('真偽値ではありません')
   })
 
-  it('number: 数値文字列は変換、非数値はエラー', () => {
+  it('number: 数値文字列は変換し非数値はエラーにする', () => {
     const s = { n: { prop: 'n', type: 'number' } } satisfies Schema
     expect(first(s, { n: '42' }).value?.n).toBe(42)
     expect(first(s, { n: 'x' }).errors[0]?.message).toBe('数値ではありません')
@@ -39,7 +39,7 @@ describe('applySchema 型強制の分岐', () => {
     expect(first(s, { n: ' 42 ' }).value?.n).toBe(42)
   })
 
-  it('number: 16 進等の非 10 進表記・真偽/日付セル・空白のみはエラー', () => {
+  it('number: 16 進等の非 10 進表記・真偽/日付セル・空白のみはエラーにする', () => {
     const s = { n: { prop: 'n', type: 'number' } } satisfies Schema
     // Number() 丸投げだと 0x10 → 16 / true → 1 / Date → エポックms / " " → 0 になってしまう
     expect(first(s, { n: '0x10' }).errors[0]?.message).toBe('数値ではありません')
@@ -71,7 +71,7 @@ describe('applySchema 型強制の分岐', () => {
     expect(data[0]?.n).toBe(12345)
   })
 
-  it('date: Date はそのまま / ISO 文字列は変換 / 不正文字列・非日付はエラー', () => {
+  it('date: Date はそのまま受理し ISO 文字列は変換し不正文字列・非日付はエラーにする', () => {
     const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
     expect(first(s, { d: new Date(2020, 0, 1) }).value?.d).toBeInstanceOf(Date)
     expect((first(s, { d: '2020-01-01' }).value?.d as Date).getFullYear()).toBe(2020)
@@ -79,7 +79,7 @@ describe('applySchema 型強制の分岐', () => {
     expect(first(s, { d: 123 }).errors[0]?.message).toBe('日付ではありません')
   })
 
-  it('date: 日付のみ ISO は TZ に依らずローカル 0:00（暦日がずれない）', () => {
+  it('date: 日付のみ ISO は TZ に依らずローカル 0:00 で構築する（暦日がずれない）', () => {
     const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
     const d = first(s, { d: '2020-01-01' }).value?.d as Date
     expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([2020, 0, 1])
@@ -92,7 +92,7 @@ describe('applySchema 型強制の分岐', () => {
     expect(first(s, { d: '2020-01-01T00:00:00Z' }).value?.d).toBeInstanceOf(Date)
   })
 
-  it('date: ISO 以外の形式・不正な暦日はエラー', () => {
+  it('date: ISO 以外の形式・不正な暦日はエラーにする', () => {
     const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
     // 実装依存だったスラッシュ区切り・米国式・月名は受理しない
     expect(first(s, { d: '2020/01/01' }).errors[0]?.message).toBe('日付ではありません')
@@ -103,12 +103,12 @@ describe('applySchema 型強制の分岐', () => {
     expect(first(s, { d: '2020-13-01' }).errors[0]?.message).toBe('日付ではありません')
   })
 
-  it('空セルで required でも default でもなければ null', () => {
+  it('空セルで required でも default でもないとき null を返す', () => {
     const s = { x: { prop: 'x', type: 'string' } } satisfies Schema
     expect(first(s, { x: null }).value?.x).toBeNull()
   })
 
-  it('スキーマ列がシートに無い場合も null/必須エラー', () => {
+  it('スキーマ列がシートに無いときも null/必須エラーにする', () => {
     const s = { 無い列: { prop: 'missing', type: 'string', required: true } } satisfies Schema
     expect(first(s, {}).errors[0]?.message).toBe('必須です')
   })

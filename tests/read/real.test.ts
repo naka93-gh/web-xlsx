@@ -78,7 +78,7 @@ describe('実ファイル / employees.xlsx（型付き取込の主軸）', () =>
 })
 
 describe('実ファイル / multisheet.xlsx（シート選択）', () => {
-  it('既定は先頭シート（売上）', async () => {
+  it('既定で先頭シートを返す（売上）', async () => {
     const result = await parse(fixture('multisheet'))
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -101,7 +101,7 @@ describe('実ファイル / multisheet.xlsx（シート選択）', () => {
     expect(result.data[0]?.値).toBe(250)
   })
 
-  it('存在しないシート名は sheet-not-found', async () => {
+  it('存在しないシート名のとき sheet-not-found を返す', async () => {
     const result = await parse(fixture('multisheet'), { options: { sheet: '無い' } })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('sheet-not-found')
@@ -119,7 +119,7 @@ describe('実ファイル / edge.xlsx（テキスト ID・空白・空セル）'
     expect(result.data[1]?.ID).toBe('0042')
   })
 
-  it('前後空白の保持・空セルの null・浮動小数/負数', async () => {
+  it('前後空白の保持・空セルの null・浮動小数/負数を読む', async () => {
     const result = await parse(fixture('edge'))
     expect(result.ok).toBe(true)
     if (!result.ok) return

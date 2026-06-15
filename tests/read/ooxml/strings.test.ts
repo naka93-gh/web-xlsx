@@ -9,17 +9,17 @@ describe('parseSharedStrings', () => {
     expect(parseSharedStrings(xml)).toEqual(['Alice', 'Bob'])
   })
 
-  it('xml:space="preserve" の空白を保持', () => {
+  it('xml:space="preserve" の空白を保持する', () => {
     const xml = sst('<si><t xml:space="preserve"> 前後空白 </t></si>')
     expect(parseSharedStrings(xml)).toEqual([' 前後空白 '])
   })
 
-  it('リッチテキストの複数ランを連結', () => {
+  it('リッチテキストの複数ランを連結する', () => {
     const xml = sst('<si><r><t>Hello </t></r><r><rPr/><t>World</t></r></si>')
     expect(parseSharedStrings(xml)).toEqual(['Hello World'])
   })
 
-  it('ふりがな <rPh> 内のテキストは除外', () => {
+  it('ふりがな <rPh> 内のテキストは除外する', () => {
     const xml = sst(
       '<si><r><t>関西</t><rPh sb="0" eb="2"><t>カンサイ</t></rPh></r><phoneticPr fontId="1"/></si>',
     )
@@ -31,7 +31,7 @@ describe('parseSharedStrings', () => {
     expect(parseSharedStrings(xml)).toEqual(['a & b < c'])
   })
 
-  it('空の <si> は空文字列', () => {
+  it('空の <si> のとき空文字列を返す', () => {
     const xml = sst('<si><t></t></si><si/><si><t>x</t></si>')
     expect(parseSharedStrings(xml)).toEqual(['', '', 'x'])
   })

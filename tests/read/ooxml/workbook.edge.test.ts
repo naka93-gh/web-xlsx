@@ -6,7 +6,7 @@ import { buildXlsx } from '../../helpers/zip.js'
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 
 describe('openWorkbook エッジ', () => {
-  it('officeDocument 関係が無ければ xl/workbook.xml にフォールバック', async () => {
+  it('officeDocument 関係が無いとき xl/workbook.xml にフォールバックする', async () => {
     const wb = await openWorkbook(
       await openZip(
         await buildXlsx({
@@ -22,7 +22,7 @@ describe('openWorkbook エッジ', () => {
     expect(wb.stylesPath).toBeUndefined()
   })
 
-  it('workbook.xml.rels が無ければシート解決は空', async () => {
+  it('workbook.xml.rels が無いときシート解決は空になる', async () => {
     const wb = await openWorkbook(
       await openZip(
         await buildXlsx({
@@ -35,7 +35,7 @@ describe('openWorkbook エッジ', () => {
     expect(wb.sheets).toEqual([])
   })
 
-  it('External な関係のシートは除外', async () => {
+  it('External な関係のシートを除外する', async () => {
     const wb = await openWorkbook(
       await openZip(
         await buildXlsx({
@@ -49,7 +49,7 @@ describe('openWorkbook エッジ', () => {
     expect(wb.sheets).toEqual([])
   })
 
-  it('絶対パス Target（先頭スラッシュ）を解決', async () => {
+  it('絶対パス Target（先頭スラッシュ）を解決する', async () => {
     const wb = await openWorkbook(
       await openZip(
         await buildXlsx({
@@ -63,7 +63,7 @@ describe('openWorkbook エッジ', () => {
     expect(wb.sheets[0]?.path).toBe('xl/worksheets/sheet1.xml')
   })
 
-  it('selectSheet: index 範囲外は undefined', () => {
+  it('selectSheet: index 範囲外のとき undefined を返す', () => {
     expect(selectSheet({ sheets: [], date1904: false }, 0)).toBeUndefined()
   })
 })

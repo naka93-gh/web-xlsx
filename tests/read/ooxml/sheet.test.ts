@@ -32,7 +32,7 @@ describe('readSheet', () => {
     expect(rows[1]?.cells.名前?.value).toBe('Bob')
   })
 
-  it('疎なセル（欠落列）は null', () => {
+  it('疎なセル（欠落列）のとき null を返す', () => {
     const xml = sheet(
       '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>' +
         '<row r="2"><c r="B2"><v>30</v></c></row>',
@@ -50,7 +50,7 @@ describe('readSheet', () => {
     expect(readSheet(xml, ctx()).rows[0]?.cells.名前?.value).toBe('直書き')
   })
 
-  it('空行は既定でスキップ・skipEmptyRows:false で保持', () => {
+  it('空行は既定でスキップし skipEmptyRows:false で保持する', () => {
     const xml = sheet(
       '<row r="1"><c r="A1" t="s"><v>0</v></c></row>' +
         '<row r="2"><c r="A2"/></row>' +
@@ -83,7 +83,7 @@ describe('readSheet', () => {
     expect(headers).toEqual(['名前', '年齢'])
   })
 
-  it('日付スタイルの数値は Date', () => {
+  it('日付スタイルの数値のとき Date を返す', () => {
     const dateOnly: Styles = { isDate: (i) => i === 5 }
     const xml = sheet(
       '<row r="1"><c r="A1" t="s"><v>0</v></c></row>' +
@@ -104,7 +104,7 @@ describe('readSheet', () => {
     expect(typeof cell?.value).toBe('number')
   })
 
-  it('共有文字列セルの raw は index でなく undefined（raw は数値テキスト専用）', () => {
+  it('共有文字列セルの raw は index でなく undefined を返す（raw は数値テキスト専用）', () => {
     const xml = sheet(
       '<row r="1"><c r="A1" t="s"><v>0</v></c></row>' + // 名前
         '<row r="2"><c r="A2" t="s"><v>2</v></c></row>', // Alice（v=2 は共有文字列 index）
@@ -150,7 +150,7 @@ describe('readSheetArrays（ヘッダー無し / Cell[][]）', () => {
     expect(readSheetArrays(xml, ctx())).toEqual([['名前'], ['年齢']])
   })
 
-  it('空行は既定でスキップ・skipEmptyRows:false で保持', () => {
+  it('空行は既定でスキップし skipEmptyRows:false で保持する', () => {
     const xml = sheet(
       '<row r="1"><c r="A1" t="s"><v>0</v></c></row>' +
         '<row r="2"><c r="A2"/></row>' +

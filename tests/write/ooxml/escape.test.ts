@@ -15,7 +15,7 @@ describe('escapeText（テキストノード用）', () => {
     expect(escapeText('say "hi"')).toBe('say "hi"')
   })
 
-  it('対象外の文字はそのまま', () => {
+  it('対象外の文字のときそのまま残す', () => {
     expect(escapeText('日本語 abc 123')).toBe('日本語 abc 123')
   })
 

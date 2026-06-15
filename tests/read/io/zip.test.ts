@@ -84,7 +84,7 @@ describe('openZip', () => {
     expect(await zip.readText('big.xml')).toBe(content)
   })
 
-  it('複数エントリ・ネストしたパス・has/names', async () => {
+  it('複数エントリ・ネストしたパスのとき has で存在判定し読む', async () => {
     const zip = await openZip(
       await buildZip([
         { name: '[Content_Types].xml', content: '<types/>' },
@@ -96,22 +96,22 @@ describe('openZip', () => {
     expect(await zip.readText('xl/worksheets/sheet1.xml')).toBe('<sheet/>')
   })
 
-  it('UTF-8（日本語）を正しくデコード', async () => {
+  it('UTF-8（日本語）を正しくデコードする', async () => {
     const zip = await openZip(await buildZip([{ name: 's.xml', content: '名前と年齢', method: 8 }]))
     expect(await zip.readText('s.xml')).toBe('名前と年齢')
   })
 
-  it('同じエントリを二度読んでも一致（キャッシュ）', async () => {
+  it('同じエントリを二度読んでも一致する（キャッシュ）', async () => {
     const zip = await openZip(await buildZip([{ name: 'a.txt', content: 'cached', method: 8 }]))
     expect(await zip.readText('a.txt')).toBe('cached')
     expect(await zip.readText('a.txt')).toBe('cached')
   })
 
-  it('ZIP でないバイト列は ZipError', async () => {
+  it('ZIP でないバイト列のとき ZipError を投げる', async () => {
     await expect(openZip(enc.encode('not a zip at all'))).rejects.toBeInstanceOf(ZipError)
   })
 
-  it('存在しないエントリは ZipError', async () => {
+  it('存在しないエントリのとき ZipError を投げる', async () => {
     const zip = await openZip(await buildZip([{ name: 'a.txt', content: 'x' }]))
     await expect(zip.readBytes('missing')).rejects.toBeInstanceOf(ZipError)
   })
@@ -139,7 +139,7 @@ describe('openZip 解凍サイズ上限（ZIP 爆弾対策）', () => {
     await expect(zip.readBytes('bomb.xml')).rejects.toMatchObject({ code: 'too-large' })
   })
 
-  it('アーカイブ全体の累積が上限を超えたら too-large', async () => {
+  it('アーカイブ全体の累積が上限を超えたとき too-large で弾く', async () => {
     const zip = await openZip(
       await buildZip([
         { name: 'a.xml', content: 'x'.repeat(60) },

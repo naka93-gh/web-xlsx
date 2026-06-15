@@ -23,25 +23,25 @@ const XML = `<styleSheet>
 describe('parseStyles', () => {
   const styles = parseStyles(XML)
 
-  it('builtin の日付ID(14)は日付', () => {
+  it('builtin の日付ID(14)のとき日付として扱う', () => {
     expect(styles.isDate(1)).toBe(true)
   })
 
-  it('General(0)・0.00(2)・指数(48)は日付でない', () => {
+  it('General(0)・0.00(2)・指数(48)のとき日付として扱わない', () => {
     expect(styles.isDate(0)).toBe(false)
     expect(styles.isDate(2)).toBe(false)
     expect(styles.isDate(6)).toBe(false)
   })
 
-  it('カスタム日付書式(yyyy-mm-dd)は日付', () => {
+  it('カスタム日付書式(yyyy-mm-dd)のとき日付として扱う', () => {
     expect(styles.isDate(3)).toBe(true)
   })
 
-  it('カスタム数値書式(#,##0.00)は日付でない', () => {
+  it('カスタム数値書式(#,##0.00)のとき日付として扱わない', () => {
     expect(styles.isDate(4)).toBe(false)
   })
 
-  it('和暦のカスタム書式([$-411]ge.m.d)は日付', () => {
+  it('和暦のカスタム書式([$-411]ge.m.d)のとき日付として扱う', () => {
     expect(styles.isDate(5)).toBe(true)
   })
 
@@ -50,7 +50,7 @@ describe('parseStyles', () => {
     expect(styles.isDate(0)).toBe(false)
   })
 
-  it('範囲外のインデックスは日付でない', () => {
+  it('範囲外のインデックスのとき日付として扱わない', () => {
     expect(styles.isDate(99)).toBe(false)
   })
 })

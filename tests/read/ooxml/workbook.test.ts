@@ -41,7 +41,7 @@ describe('parseWorkbookXml', () => {
     ])
   })
 
-  it('date1904 が無ければ false', () => {
+  it('date1904 が無いとき false を返す', () => {
     expect(parseWorkbookXml('<workbook><sheets/></workbook>').date1904).toBe(false)
   })
 })
@@ -61,7 +61,7 @@ const files = () => ({
 })
 
 describe('openWorkbook', () => {
-  it('シートを実ファイルパスに解決し、共有文字列/スタイルも解決', async () => {
+  it('シートを実ファイルパスに解決し、共有文字列/スタイルも解決する', async () => {
     const wb = await openWorkbook(await openZip(await buildXlsx(files())))
     expect(wb.date1904).toBe(false)
     expect(wb.sheets).toEqual([
@@ -72,7 +72,7 @@ describe('openWorkbook', () => {
     expect(wb.sharedStringsPath).toBe('xl/sharedStrings.xml')
   })
 
-  it('selectSheet: 既定は先頭・index・名前', async () => {
+  it('selectSheet: 既定で先頭・index・名前から選ぶ', async () => {
     const wb = await openWorkbook(await openZip(await buildXlsx(files())))
     expect(selectSheet(wb)?.name).toBe('従業員')
     expect(selectSheet(wb, 1)?.name).toBe('部署')

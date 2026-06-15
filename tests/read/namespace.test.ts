@@ -7,7 +7,7 @@ const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships
 // 要素名に名前空間プレフィックス（既定 `x:`）を付けた xlsx を組む。
 // OOXML の namespace は任意プレフィックスに束縛可能で、Excel 含む一部生成系が
 // プレフィックスを出す。属性（r:id 等）はパーサが付きで参照するため触らない。
-// prefix を '' にすると現行（プレフィックス無し）の対照ファイルになる。
+// prefix を '' にすると現行（プレフィックス無し）の対照ファイルになる
 const xlsx = (p: string) =>
   buildXlsx({
     '_rels/.rels': `<${p}Relationships><${p}Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></${p}Relationships>`,

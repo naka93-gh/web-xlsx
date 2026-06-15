@@ -22,7 +22,7 @@ const dateCtx = (): ResolveContext => ({
 const sheet = (rows: string) => `<worksheet><sheetData>${rows}</sheetData></worksheet>`
 
 describe('readSheet エッジ', () => {
-  it('r 属性の無いセルは出現順で列に割り当て', () => {
+  it('r 属性の無いセルは出現順で列に割り当てる', () => {
     const xml = sheet(
       '<row r="1"><c t="inlineStr"><is><t>A</t></is></c><c t="inlineStr"><is><t>B</t></is></c></row>' +
         '<row r="2"><c><v>1</v></c><c><v>2</v></c></row>',
@@ -33,7 +33,7 @@ describe('readSheet エッジ', () => {
     expect(rows[0]?.cells.B?.value).toBe(2)
   })
 
-  it('壊れた r 属性のセルは列 0 に衝突させず出現順に割り当て', () => {
+  it('壊れた r 属性のセルは列 0 に衝突させず出現順に割り当てる', () => {
     const xml = sheet(
       '<row r="1"><c r="A1" t="inlineStr"><is><t>A</t></is></c><c r="??" t="inlineStr"><is><t>B</t></is></c></row>' +
         '<row r="2"><c r="A2"><v>1</v></c><c r="??"><v>2</v></c></row>',
@@ -44,7 +44,7 @@ describe('readSheet エッジ', () => {
     expect(rows[0]?.cells.B?.value).toBe(2)
   })
 
-  it('inline 文字列のふりがな <rPh> を除外', () => {
+  it('inline 文字列のふりがな <rPh> を除外する', () => {
     const xml = sheet(
       '<row r="1"><c t="inlineStr"><is><t>見出し</t></is></c></row>' +
         '<row r="2"><c t="inlineStr"><is><r><t>関西</t><rPh><t>カンサイ</t></rPh></r></is></c></row>',
@@ -72,16 +72,16 @@ describe('readSheet エッジ', () => {
     expect(rows[1]?.cells.H?.value).toBe(10)
   })
 
-  it('非空行が無ければ空の結果', () => {
+  it('非空行が無いとき空の結果を返す', () => {
     expect(readSheet(sheet(''), ctx())).toEqual({ headers: [], rows: [] })
   })
 
-  it('headerRow が存在しない行を指すとヘッダー空', () => {
+  it('headerRow が存在しない行を指すときヘッダーを空にする', () => {
     const xml = sheet('<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>')
     expect(readSheet(xml, ctx(), { headerRow: 99 }).headers).toEqual([])
   })
 
-  it('headerRow の 0 以下・非整数は OptionError（黙って空結果にしない）', () => {
+  it('headerRow の 0 以下・非整数のとき OptionError を投げる（黙って空結果にしない）', () => {
     const xml = sheet('<row r="1"><c r="A1" t="inlineStr"><is><t>H</t></is></c></row>')
     expect(() => readSheet(xml, ctx(), { headerRow: 0 })).toThrow(OptionError)
     expect(() => readSheet(xml, ctx(), { headerRow: -1 })).toThrow(OptionError)

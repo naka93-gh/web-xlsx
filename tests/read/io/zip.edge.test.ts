@@ -43,11 +43,11 @@ function buildSingle(name: string, content: string, method: number): Uint8Array 
 }
 
 describe('openZip エッジ', () => {
-  it('EOCD シグネチャが無ければ ZipError', async () => {
+  it('EOCD シグネチャが無いとき ZipError を投げる', async () => {
     await expect(openZip(new Uint8Array(40))).rejects.toThrow(ZipError)
   })
 
-  it('ZIP64（cdOffset=0xffffffff）は未対応で ZipError', async () => {
+  it('ZIP64（cdOffset=0xffffffff）のとき未対応で ZipError を投げる', async () => {
     const eocd = new Uint8Array(22)
     const ev = new DataView(eocd.buffer)
     ev.setUint32(0, 0x06054b50, true)
@@ -55,7 +55,7 @@ describe('openZip エッジ', () => {
     await expect(openZip(eocd)).rejects.toThrow(/ZIP64/)
   })
 
-  it('エントリ単位の ZIP64 マーカー（localOffset=0xffffffff）は未対応で ZipError', async () => {
+  it('エントリ単位の ZIP64 マーカー（localOffset=0xffffffff）のとき未対応で ZipError を投げる', async () => {
     const zip = buildSingle('a.txt', 'x', 0)
     // 中央ディレクトリヘッダ（localOffset は CDH 先頭 +42）を ZIP64 マーカーに差し替える
     const cdStart = zip.length - 22 - (46 + enc.encode('a.txt').length)
@@ -68,7 +68,7 @@ describe('openZip エッジ', () => {
     expect(await zip.readText('a.txt')).toBe('plain')
   })
 
-  it('未対応の圧縮方式は ZipError', async () => {
+  it('未対応の圧縮方式のとき ZipError を投げる', async () => {
     const zip = await openZip(buildSingle('a.txt', 'x', 99))
     await expect(zip.readBytes('a.txt')).rejects.toThrow(/圧縮方式/)
   })
@@ -83,14 +83,14 @@ describe('openZip エッジ', () => {
     await expect(archive.readBytes('a.txt')).rejects.toThrow(/境界/)
   })
 
-  it('中央ディレクトリが末尾で切れていても RangeError でなく ZipError', async () => {
+  it('中央ディレクトリが末尾で切れているとき RangeError でなく ZipError を投げる', async () => {
     const zip = buildSingle('a.txt', 'x', 0)
     // EOCD の cdOffset を末尾近く（46 バイト読めない位置）に書き換える
     new DataView(zip.buffer).setUint32(zip.length - 22 + 16, zip.length - 10, true)
     await expect(openZip(zip)).rejects.toThrow(/中央ディレクトリ/)
   })
 
-  it('ローカルヘッダが境界外を指していても RangeError でなく ZipError', async () => {
+  it('ローカルヘッダが境界外を指しているとき RangeError でなく ZipError を投げる', async () => {
     const zip = buildSingle('a.txt', 'x', 0)
     // CDH の localOffset を末尾近く（30 バイト読めない位置）に書き換える
     const cdStart = zip.length - 22 - (46 + enc.encode('a.txt').length)
@@ -99,7 +99,7 @@ describe('openZip エッジ', () => {
     await expect(archive.readBytes('a.txt')).rejects.toThrow(/ローカルヘッダ/)
   })
 
-  it('壊れた deflate ストリームは英語の内部メッセージでなく ZipError', async () => {
+  it('壊れた deflate ストリームのとき英語の内部メッセージでなく ZipError を投げる', async () => {
     // method=8 だが中身は生テキスト（不正な deflate データ）
     const zip = await openZip(buildSingle('a.txt', 'not-deflate-data', 8))
     await expect(zip.readBytes('a.txt')).rejects.toThrow(/圧縮データが壊れています/)
@@ -110,7 +110,7 @@ describe('deflate-raw 非対応環境', () => {
   // 展開を要する deflate(8) エントリ。展開直前に環境要因で失敗させる
   const deflated = () => buildSingle('a.txt', 'x', 8)
 
-  it('DecompressionStream が無い環境は unsupported（破損扱いにしない）', async () => {
+  it('DecompressionStream が無い環境のとき unsupported を返す（破損扱いにしない）', async () => {
     const zip = await openZip(deflated())
     vi.stubGlobal('DecompressionStream', undefined)
     try {
@@ -122,7 +122,7 @@ describe('deflate-raw 非対応環境', () => {
     }
   })
 
-  it('DecompressionStream はあるが deflate-raw 未対応（構築で例外）は unsupported', async () => {
+  it('DecompressionStream はあるが deflate-raw 未対応（構築で例外）のとき unsupported を返す', async () => {
     const zip = await openZip(deflated())
     class Broken {
       constructor() {

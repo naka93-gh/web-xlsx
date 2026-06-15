@@ -8,24 +8,24 @@ function sheetName(name: string): string {
 }
 
 describe('sanitizeSheetName（workbookXml 経由）', () => {
-  it('通常名はそのまま', () => {
+  it('通常名のときそのまま返す', () => {
     expect(sheetName('社員一覧')).toBe('社員一覧')
   })
 
-  it('禁止文字 \\ / ? * [ ] : を _ に置換', () => {
+  it('禁止文字 \\ / ? * [ ] : があるとき _ に置換する', () => {
     expect(sheetName('a/b\\c?d*e[f]g:h')).toBe('a_b_c_d_e_f_g_h')
   })
 
-  it('31 文字に丸める', () => {
+  it('31 文字を超えるとき 31 文字に丸める', () => {
     expect(sheetName('x'.repeat(40))).toBe('x'.repeat(31))
   })
 
-  it('空・空白のみは Sheet1 にフォールバック', () => {
+  it('空・空白のみのとき Sheet1 にフォールバックする', () => {
     expect(sheetName('')).toBe('Sheet1')
     expect(sheetName('   ')).toBe('Sheet1')
   })
 
-  it('前後空白は trim される', () => {
+  it('前後空白があるとき trim する', () => {
     expect(sheetName('  名簿  ')).toBe('名簿')
   })
 

@@ -23,7 +23,7 @@ describe('tokenize エッジ', () => {
     expect(collect('<a><![CDATA[tail')).toContainEqual({ type: 'text', value: 'tail' })
   })
 
-  it('値の無い属性は空文字列', () => {
+  it('値の無い属性は空文字列にする', () => {
     const [tok] = collect('<input disabled/>')
     expect(tok).toMatchObject({ name: 'input', attrs: { disabled: '' } })
   })

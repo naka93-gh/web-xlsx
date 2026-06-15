@@ -16,7 +16,7 @@ describe('collectRows', () => {
     expect(rows[0]?.cells.get(2)).toEqual({ style: 3, value: '30' })
   })
 
-  it('r 属性の無い行・セルは連番／出現順にフォールバック', () => {
+  it('r 属性の無い行・セルは連番／出現順にフォールバックする', () => {
     const rows = collectRows(
       sheet('<row><c><v>1</v></c><c><v>2</v></c></row><row><c><v>3</v></c></row>'),
     )
@@ -26,7 +26,7 @@ describe('collectRows', () => {
     expect(rows[1]?.cells.get(0)?.value).toBe('3')
   })
 
-  it('壊れた r 属性の行は NaN を伝播させず連番にフォールバック', () => {
+  it('壊れた r 属性の行は NaN を伝播させず連番にフォールバックする', () => {
     const rows = collectRows(
       sheet('<row r="1"><c r="A1"><v>1</v></c></row><row r="xx"><c r="A2"><v>2</v></c></row>'),
     )
@@ -70,11 +70,11 @@ describe('collectRows', () => {
     expect(rows[0]?.cells.get(0)?.value).toBe('9')
   })
 
-  it('空の sheetData は空配列', () => {
+  it('空の sheetData のとき空配列を返す', () => {
     expect(collectRows(sheet(''))).toEqual([])
   })
 
-  it('自己終了 <sheetData/> も空配列（スコープに入らない）', () => {
+  it('自己終了 <sheetData/> のとき空配列を返す（スコープに入らない）', () => {
     expect(collectRows('<worksheet><sheetData/></worksheet>')).toEqual([])
   })
 })

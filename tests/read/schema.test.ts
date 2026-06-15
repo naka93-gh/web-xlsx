@@ -36,7 +36,7 @@ describe('applySchema', () => {
     expect(data[0]).toEqual({ name: 'Alice', age: 30, hireDate: new Date(2020, 0, 1) })
   })
 
-  it('required 欠落は行を除外して error', () => {
+  it('required 欠落のとき行を除外して error にする', () => {
     const rows = [
       row(2, { 名前: { value: null }, 年齢: { value: 30 } }),
       row(3, { 名前: { value: 'Bob' }, 年齢: { value: 25 } }),
@@ -47,7 +47,7 @@ describe('applySchema', () => {
     expect(errors[0]).toMatchObject({ row: 2, column: '名前', message: '必須です' })
   })
 
-  it('defaultValue で補完', () => {
+  it('defaultValue で補完する', () => {
     const s = { 区分: { prop: 'kind', type: 'string', defaultValue: '未設定' } } satisfies Schema
     const { data } = applySchema([row(2, { 区分: { value: null } })], s)
     expect(data[0]?.kind).toBe('未設定')
@@ -67,7 +67,7 @@ describe('applySchema', () => {
     expect(ng).toBeDefined()
   })
 
-  it('型不一致は error', () => {
+  it('型不一致のとき error にする', () => {
     const { data, errors } = applySchema(
       [row(2, { 名前: { value: 'x' }, 年齢: { value: 'abc' } })],
       schema,
@@ -76,7 +76,7 @@ describe('applySchema', () => {
     expect(errors[0]).toMatchObject({ row: 2, column: '年齢', message: '数値ではありません' })
   })
 
-  it('validate 失敗は error', () => {
+  it('validate 失敗のとき error にする', () => {
     const s = {
       年齢: {
         prop: 'age',
@@ -107,7 +107,7 @@ describe('applySchema', () => {
     expect(errors[0]).toMatchObject({ row: 2, column: '年齢', message: '検証器が壊れた' })
   })
 
-  it('大整数IDは string 指定で raw の桁を保持', () => {
+  it('大整数ID は string 指定で raw の桁を保持する', () => {
     const s = { 社員番号: { prop: 'code', type: 'string' } } satisfies Schema
     const { data } = applySchema(
       [row(2, { 社員番号: { value: Number('12345678901234567'), raw: '12345678901234567' } })],
@@ -137,7 +137,7 @@ describe('parse（高レベル・スキーマ E2E）', () => {
       </sheetData></worksheet>`,
     })
 
-  it('スキーマで型付けし、不正行は errors に', async () => {
+  it('スキーマで型付けし、不正行は errors に入れる', async () => {
     const bytes = await fixture()
 
     const schema = {
@@ -156,7 +156,7 @@ describe('parse（高レベル・スキーマ E2E）', () => {
     })
   })
 
-  it('必須列がヘッダーに無ければ missing-column のファイルエラー', async () => {
+  it('必須列がヘッダーに無いとき missing-column のファイルエラーを返す', async () => {
     const schema = {
       名前: { prop: 'name', type: 'string', required: true },
       社員番号: { prop: 'code', type: 'string', required: true },

@@ -13,21 +13,21 @@ describe('parseIsoDate（日付のみ YYYY-MM-DD）', () => {
     expect(d.getMinutes()).toBe(0)
   })
 
-  it('閏日 2024-02-29 は有効', () => {
+  it('閏日 2024-02-29 のとき有効な日付を返す', () => {
     const d = parseIsoDate('2024-02-29')
     expect(d?.getMonth()).toBe(1)
     expect(d?.getDate()).toBe(29)
   })
 
-  it('平年の 2-29（2023-02-29）は繰り上がるため null', () => {
+  it('平年の 2-29（2023-02-29）のとき繰り上がるため null を返す', () => {
     expect(parseIsoDate('2023-02-29')).toBeNull()
   })
 
-  it('存在しない 2024-02-30 は繰り上がるため null', () => {
+  it('存在しない 2024-02-30 のとき繰り上がるため null を返す', () => {
     expect(parseIsoDate('2024-02-30')).toBeNull()
   })
 
-  it('存在しない 2020-13-01（月 13）は null', () => {
+  it('存在しない 2020-13-01（月 13）のとき null を返す', () => {
     expect(parseIsoDate('2020-13-01')).toBeNull()
   })
 
@@ -38,7 +38,7 @@ describe('parseIsoDate（日付のみ YYYY-MM-DD）', () => {
 })
 
 describe('parseIsoDate（日時 YYYY-MM-DDThh:mm…）', () => {
-  it('TZ 指定なしはローカル解釈（壁時計どおり）', () => {
+  it('TZ 指定なしのときローカル解釈する（壁時計どおり）', () => {
     const d = parseIsoDate('2020-06-15T13:45')
     expect(d).not.toBeNull()
     if (!d) return
@@ -64,7 +64,7 @@ describe('parseIsoDate（日時 YYYY-MM-DDThh:mm…）', () => {
     expect(d?.getTime()).toBe(Date.UTC(2020, 5, 15, 4, 45, 0))
   })
 
-  it('範囲外の時刻 25:00 は null', () => {
+  it('範囲外の時刻 25:00 のとき null を返す', () => {
     expect(parseIsoDate('2020-06-15T25:00')).toBeNull()
   })
 })
@@ -76,7 +76,7 @@ describe('parseIsoDate（utc オプション）', () => {
     expect(d?.toISOString()).toBe('2020-01-31T00:00:00.000Z')
   })
 
-  it('日付のみの不正日（2024-02-30）は utc でも null', () => {
+  it('日付のみの不正日（2024-02-30）のとき utc でも null を返す', () => {
     expect(parseIsoDate('2024-02-30', true)).toBeNull()
   })
 
@@ -85,46 +85,46 @@ describe('parseIsoDate（utc オプション）', () => {
     expect(d?.getTime()).toBe(Date.UTC(2020, 5, 15, 13, 45))
   })
 
-  it('TZ 指定ありはそのまま（オフセット優先）', () => {
+  it('TZ 指定ありのときそのオフセットを優先する', () => {
     const d = parseIsoDate('2020-06-15T13:45:00+09:00', true)
     expect(d?.getTime()).toBe(Date.UTC(2020, 5, 15, 4, 45))
   })
 })
 
 describe('parseIsoDate（不正形式は null）', () => {
-  it('空文字', () => {
+  it('空文字のとき null を返す', () => {
     expect(parseIsoDate('')).toBeNull()
   })
 
-  it('スラッシュ区切り', () => {
+  it('スラッシュ区切りのとき null を返す', () => {
     expect(parseIsoDate('2020/06/15')).toBeNull()
   })
 
-  it('桁数不足（年 2 桁）', () => {
+  it('桁数不足（年 2 桁）のとき null を返す', () => {
     expect(parseIsoDate('20-06-15')).toBeNull()
   })
 
-  it('日付のみで T 区切り空（末尾 T）', () => {
+  it('日付のみで T 区切り空（末尾 T）のとき null を返す', () => {
     expect(parseIsoDate('2020-06-15T')).toBeNull()
   })
 
-  it('日時で T でなく空白区切り', () => {
+  it('日時で T でなく空白区切りのとき null を返す', () => {
     expect(parseIsoDate('2020-06-15 13:45')).toBeNull()
   })
 
-  it('数値でないゴミ', () => {
+  it('数値でないゴミのとき null を返す', () => {
     expect(parseIsoDate('not a date')).toBeNull()
   })
 })
 
 describe('formatIsoDate（Date → ISO 8601）', () => {
-  it('0:00 は日付のみ、時刻ありは秒まで、ミリ秒ありは .sss 付き', () => {
+  it('0:00 のとき日付のみ、時刻ありは秒まで、ミリ秒ありは .sss 付きで出力する', () => {
     expect(formatIsoDate(new Date(2020, 3, 1))).toBe('2020-04-01')
     expect(formatIsoDate(new Date(2020, 3, 1, 9, 30, 5))).toBe('2020-04-01T09:30:05')
     expect(formatIsoDate(new Date(2020, 3, 1, 0, 0, 0, 500))).toBe('2020-04-01T00:00:00.500')
   })
 
-  it('utc 指定は UTC の暦日・時刻で出す', () => {
+  it('utc 指定のとき UTC の暦日・時刻で出力する', () => {
     expect(formatIsoDate(new Date(Date.UTC(2020, 3, 1)), true)).toBe('2020-04-01')
     expect(formatIsoDate(new Date(Date.UTC(2020, 3, 1, 9, 30, 5)), true)).toBe(
       '2020-04-01T09:30:05',

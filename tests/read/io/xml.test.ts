@@ -4,13 +4,13 @@ import { decodeEntities, tokenize, type XmlToken } from '../../../src/read/io/xm
 const collect = (xml: string): XmlToken[] => [...tokenize(xml)]
 
 describe('decodeEntities', () => {
-  it('定義済み実体', () => {
+  it('decodeEntities は定義済み実体をデコードする', () => {
     expect(decodeEntities('a &amp; b &lt;c&gt; &quot;d&quot; &apos;e&apos;')).toBe(
       `a & b <c> "d" 'e'`,
     )
   })
 
-  it('数値参照（10進・16進）', () => {
+  it('数値参照（10進・16進）をデコードする', () => {
     expect(decodeEntities('&#65;&#x42;')).toBe('AB')
   })
 
@@ -37,7 +37,7 @@ describe('decodeEntities', () => {
 })
 
 describe('tokenize', () => {
-  it('開始・自己終了・テキスト・終了', () => {
+  it('開始・自己終了・テキスト・終了のとき各トークンに分割する', () => {
     const tokens = collect('<a x="1"><b/>text</a>')
     expect(tokens).toEqual([
       { type: 'open', name: 'a', attrs: { x: '1' }, selfClosing: false },
@@ -47,7 +47,7 @@ describe('tokenize', () => {
     ])
   })
 
-  it('属性のデコードと空白保持', () => {
+  it('属性をデコードし空白を保持する', () => {
     const tokens = collect('<t xml:space="preserve"> a &amp; b </t>')
     expect(tokens[0]).toEqual({
       type: 'open',
@@ -58,7 +58,7 @@ describe('tokenize', () => {
     expect(tokens[1]).toEqual({ type: 'text', value: ' a & b ' })
   })
 
-  it('接頭辞つき属性', () => {
+  it('接頭辞つき属性を読む', () => {
     const [tok] = collect('<sheet name="S1" r:id="rId1"/>')
     expect(tok).toEqual({
       type: 'open',
@@ -100,7 +100,7 @@ describe('tokenize', () => {
     expect(tokens[1]).toEqual({ type: 'text', value: '<x>&y' })
   })
 
-  it('共有文字列のリッチテキスト構造', () => {
+  it('共有文字列のリッチテキストを連結する', () => {
     const tokens = collect('<si><r><t>Hello </t></r><r><t>World</t></r></si>')
     const texts = tokens.filter((t): t is Extract<XmlToken, { type: 'text' }> => t.type === 'text')
     expect(texts.map((t) => t.value).join('')).toBe('Hello World')

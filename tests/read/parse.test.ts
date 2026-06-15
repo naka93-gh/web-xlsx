@@ -37,30 +37,30 @@ describe('parse（低レベル E2E）', () => {
     expect(result.data[1]?.名前).toBe('Bob')
   })
 
-  it('sheet オプション（名前指定）', async () => {
+  it('sheet オプション（名前指定）で選ぶ', async () => {
     const result = await parse(await xlsx(), { options: { sheet: 'Sheet1' } })
     expect(result.ok && result.data).toHaveLength(2)
   })
 
-  it('存在しないシートは sheet-not-found', async () => {
+  it('存在しないシートのとき sheet-not-found を返す', async () => {
     const result = await parse(await xlsx(), { options: { sheet: '無い' } })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('sheet-not-found')
   })
 
-  it('ZIP でないバイト列は not-zip', async () => {
+  it('ZIP でないバイト列のとき not-zip を返す', async () => {
     const result = await parse(new TextEncoder().encode('not a zip'))
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('not-zip')
   })
 
-  it('不正な range は invalid-range（ファイル破損と区別する）', async () => {
+  it('不正な range のとき invalid-range を返す（ファイル破損と区別する）', async () => {
     const result = await parse(await xlsx(), { options: { range: 'A1:D' } })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('invalid-range')
   })
 
-  it('シートは宣言されているが本体 XML が欠落は invalid-xlsx', async () => {
+  it('シートは宣言されているが本体 XML が欠落のとき invalid-xlsx を返す', async () => {
     // worksheets/sheet1.xml を意図的に含めない（rels だけ参照が残る）
     const bytes = await buildXlsx({
       '_rels/.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
@@ -72,7 +72,7 @@ describe('parse（低レベル E2E）', () => {
     if (!result.ok) expect(result.error.code).toBe('invalid-xlsx')
   })
 
-  it('同名ヘッダー列がある場合は duplicate-header（後勝ち上書きで黙ってデータが消えるのを防ぐ）', async () => {
+  it('同名ヘッダー列があるとき duplicate-header を返す（後勝ち上書きで黙ってデータが消えるのを防ぐ）', async () => {
     const bytes = await buildXlsx({
       '_rels/.rels': `<Relationships><Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
       'xl/workbook.xml': `<workbook><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>`,
@@ -134,7 +134,7 @@ describe('parse（低レベル E2E）', () => {
     expect(row[protoKey]).toBe('Alice')
   })
 
-  it('prop が重複するスキーマは invalid-option（後勝ち上書きでデータが消えるのを防ぐ）', async () => {
+  it('prop が重複するスキーマのとき invalid-option を返す（後勝ち上書きでデータが消えるのを防ぐ）', async () => {
     const schema = {
       氏名: { prop: 'name', type: 'string' },
       名前: { prop: 'name', type: 'string' },
@@ -147,7 +147,7 @@ describe('parse（低レベル E2E）', () => {
     }
   })
 
-  it('headerRow の不正値（0・非整数）は invalid-option', async () => {
+  it('headerRow の不正値（0・非整数）のとき invalid-option を返す', async () => {
     const zero = await parse(await xlsx(), { options: { headerRow: 0 } })
     expect(zero.ok).toBe(false)
     if (!zero.ok) expect(zero.error.code).toBe('invalid-option')
@@ -157,7 +157,7 @@ describe('parse（低レベル E2E）', () => {
     if (!frac.ok) expect(frac.error.code).toBe('invalid-option')
   })
 
-  it('ZIP は開けるが中身破損（中央ディレクトリ不正）は invalid-xlsx', async () => {
+  it('ZIP は開けるが中身破損（中央ディレクトリ不正）のとき invalid-xlsx を返す', async () => {
     // EOCD は見つかるが cdOffset 先に CDH シグネチャが無い ZIP を組む
     const bytes = new Uint8Array(8 + 22) // [壊れた CD 領域][EOCD]
     const view = new DataView(bytes.buffer)
@@ -169,14 +169,14 @@ describe('parse（低レベル E2E）', () => {
     if (!result.ok) expect(result.error.code).toBe('invalid-xlsx')
   })
 
-  it('limits オプションが openZip に渡り上限超過で too-large', async () => {
+  it('limits オプションが openZip に渡り上限超過で too-large を返す', async () => {
     // 既定上限なら通る正規 xlsx を、極小上限で弾けることで橋渡しを確認する
     const result = await parse(await xlsx(), { options: { limits: { maxTotalBytes: 1 } } })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('too-large')
   })
 
-  it('deflate-raw 非対応環境は unsupported-environment（破損 invalid-xlsx に化けない）', async () => {
+  it('deflate-raw 非対応環境のとき unsupported-environment を返す（破損 invalid-xlsx に化けない）', async () => {
     // 正規 xlsx を先に組んでから、展開器の構築だけを失敗させる
     const bytes = await xlsx()
     class Broken {
@@ -203,7 +203,7 @@ describe('parseFile', () => {
     expect(result.ok && result.data[0]?.名前).toBe('Alice')
   })
 
-  it('読み込みに失敗したら read-failed（ファイル破損と区別する）', async () => {
+  it('読み込みに失敗したとき read-failed を返す（ファイル破損と区別する）', async () => {
     const bad = { arrayBuffer: () => Promise.reject(new Error('boom')) } as unknown as Blob
     const result = await parseFile(bad)
     expect(!result.ok && result.error.code).toBe('read-failed')
@@ -234,7 +234,7 @@ describe('parse（header:false / 配列 of 配列）', () => {
     }
   })
 
-  it('schema との併用は型エラー（排他）', async () => {
+  it('schema との併用のとき型エラーになる（排他）', async () => {
     const schema = { 名前: { prop: 'name', type: 'string' } } satisfies Schema
     // @ts-expect-error header:false と schema は併用できない
     await parse(await xlsx(), { schema, options: { header: false } })
