@@ -3,7 +3,7 @@
 import { formatIsoDate, parseIsoDate } from '../core/date.js'
 import type { Cell, ColumnType, Schema } from '../core/types.js'
 import type { SheetRow } from './ooxml/sheet.js'
-import type { RowError } from './types.js'
+import type { RowError, RowErrorCode } from './types.js'
 
 // 10 進数値の文字列（符号・小数・指数可）。Number() 丸投げだと "0x10" 等の
 // 16 進表記や真偽値まで暗黙に通ってしまうため、受理形式を明示的に限定する
@@ -17,7 +17,7 @@ function coerce(
   resolved: Cell,
   raw: string | undefined,
   utc: boolean,
-): { value: Cell } | { error: string } {
+): { value: Cell } | { error: string; code: RowErrorCode } {
   switch (type) {
     case 'string':
       // 数値セルは raw（元テキスト）を使い大整数の桁落ちを防ぐ。共有文字列等は resolved
@@ -31,22 +31,22 @@ function coerce(
       if (typeof resolved === 'string' && DECIMAL_RE.test(resolved.trim())) {
         return { value: Number(resolved) }
       }
-      return { error: '数値ではありません' }
+      return { error: 'Not a number', code: 'non-number' }
     }
     case 'boolean': {
       if (typeof resolved === 'boolean') return { value: resolved }
       const t = String(resolved).toLowerCase()
       if (t === 'true' || t === '1') return { value: true }
       if (t === 'false' || t === '0') return { value: false }
-      return { error: '真偽値ではありません' }
+      return { error: 'Not a boolean', code: 'non-boolean' }
     }
     case 'date': {
       if (resolved instanceof Date) return { value: resolved }
       if (typeof resolved === 'string') {
         const d = parseIsoDate(resolved, utc)
-        return d ? { value: d } : { error: '日付ではありません' }
+        return d ? { value: d } : { error: 'Not a date', code: 'non-date' }
       }
-      return { error: '日付ではありません' }
+      return { error: 'Not a date', code: 'non-date' }
     }
   }
 }
@@ -78,7 +78,7 @@ export function applySchema(
       if (resolved === null || resolved === '') {
         if (column.defaultValue !== undefined) out[column.prop] = column.defaultValue
         else if (column.required)
-          rowErrors.push({ row: sr.rowNum, column: header, message: '必須です' })
+          rowErrors.push({ code: 'required', row: sr.rowNum, column: header, message: 'Required' })
         else out[column.prop] = null
         continue
       }
@@ -90,10 +90,16 @@ export function applySchema(
         try {
           message = column.validate(resolved)
         } catch (e) {
-          message = e instanceof Error ? e.message : '検証中にエラーが発生しました'
+          message = e instanceof Error ? e.message : 'Validation threw an error'
         }
         if (message) {
-          rowErrors.push({ row: sr.rowNum, column: header, value: resolved, message })
+          rowErrors.push({
+            code: 'validate',
+            row: sr.rowNum,
+            column: header,
+            value: resolved,
+            message,
+          })
           continue
         }
       }
@@ -101,7 +107,13 @@ export function applySchema(
       // 列型へ強制する。失敗は値を捨てて行エラーに
       const result = coerce(column.type, resolved, cell?.raw, utc)
       if ('error' in result) {
-        rowErrors.push({ row: sr.rowNum, column: header, value: resolved, message: result.error })
+        rowErrors.push({
+          code: result.code,
+          row: sr.rowNum,
+          column: header,
+          value: resolved,
+          message: result.error,
+        })
         continue
       }
       out[column.prop] = result.value

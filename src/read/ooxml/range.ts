@@ -38,7 +38,7 @@ function parseEndpoint(ref: string): { col: number | null; row: number | null } 
 function axisSpan(s: number | null, e: number | null, range: string): [number, number] | null {
   if (s === null && e === null) return null
   if (s === null || e === null) {
-    throw new RangeFormatError(`range の開始と終了で形式が一致しません: "${range}"`)
+    throw new RangeFormatError(`range start and end have mismatched forms: "${range}"`)
   }
   return [Math.min(s, e), Math.max(s, e)]
 }
@@ -52,11 +52,11 @@ function axisSpan(s: number | null, e: number | null, range: string): [number, n
 export function parseRange(range: string): CellRange {
   const parts = range.split(':')
   // "A1:B2:C3" のようなコロン過多は黙って "A1:B2" に丸めず不正として弾く
-  if (parts.length > 2) throw new RangeFormatError(`range の形式が不正です: "${range}"`)
+  if (parts.length > 2) throw new RangeFormatError(`Invalid range format: "${range}"`)
   const [a, b] = parts
   const start = a ? parseEndpoint(a) : null
   const end = b !== undefined ? parseEndpoint(b) : start
-  if (!start || !end) throw new RangeFormatError(`range の形式が不正です: "${range}"`)
+  if (!start || !end) throw new RangeFormatError(`Invalid range format: "${range}"`)
 
   const col = axisSpan(start.col, end.col, range)
   const row = axisSpan(start.row, end.row, range)

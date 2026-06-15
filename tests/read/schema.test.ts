@@ -44,7 +44,7 @@ describe('applySchema', () => {
     const { data, errors } = applySchema(rows, schema)
     expect(data).toHaveLength(1)
     expect(data[0]?.name).toBe('Bob')
-    expect(errors[0]).toMatchObject({ row: 2, column: '名前', message: '必須です' })
+    expect(errors[0]).toMatchObject({ code: 'required', row: 2, column: '名前' })
   })
 
   it('defaultValue で補完する', () => {
@@ -73,7 +73,7 @@ describe('applySchema', () => {
       schema,
     )
     expect(data).toHaveLength(0)
-    expect(errors[0]).toMatchObject({ row: 2, column: '年齢', message: '数値ではありません' })
+    expect(errors[0]).toMatchObject({ code: 'non-number', row: 2, column: '年齢' })
   })
 
   it('validate 失敗のとき error にする', () => {
@@ -85,7 +85,7 @@ describe('applySchema', () => {
       },
     } satisfies Schema
     const { errors } = applySchema([row(2, { 年齢: { value: -1 } })], s)
-    expect(errors[0]?.message).toBe('負の値です')
+    expect(errors[0]).toMatchObject({ code: 'validate', message: '負の値です' })
   })
 
   it('validate が throw しても巻き込まず、その行を error にして他行は通す', () => {
@@ -104,7 +104,12 @@ describe('applySchema', () => {
       s,
     )
     expect(data).toEqual([{ age: 30 }])
-    expect(errors[0]).toMatchObject({ row: 2, column: '年齢', message: '検証器が壊れた' })
+    expect(errors[0]).toMatchObject({
+      code: 'validate',
+      row: 2,
+      column: '年齢',
+      message: '検証器が壊れた',
+    })
   })
 
   it('大整数ID は string 指定で raw の桁を保持する', () => {
@@ -150,9 +155,9 @@ describe('parse（高レベル・スキーマ E2E）', () => {
     if (!result.ok) return
     expect(result.data).toEqual([{ name: 'Alice', age: 30 }])
     expect(result.errors[0]).toMatchObject({
+      code: 'non-number',
       row: 3,
       column: '年齢',
-      message: '数値ではありません',
     })
   })
 

@@ -45,7 +45,7 @@ function toFileError(error: unknown): FileError {
   }
   return {
     code: 'invalid-xlsx',
-    message: error instanceof Error ? error.message : '不正な xlsx です',
+    message: error instanceof Error ? error.message : 'Invalid xlsx file',
   }
 }
 
@@ -83,7 +83,7 @@ async function readWorkbookSheet(
     if (!sheetRef) {
       return {
         ok: false,
-        error: { code: 'sheet-not-found', message: '対象シートが見つかりません' },
+        error: { code: 'sheet-not-found', message: 'Target sheet not found' },
       }
     }
 
@@ -91,7 +91,7 @@ async function readWorkbookSheet(
     if (!zip.has(sheetRef.path)) {
       return {
         ok: false,
-        error: { code: 'invalid-xlsx', message: `シート本体が見つかりません: ${sheetRef.path}` },
+        error: { code: 'invalid-xlsx', message: `Sheet body not found: ${sheetRef.path}` },
       }
     }
 
@@ -125,7 +125,7 @@ async function readWorkbookSheet(
     if (duplicate !== undefined) {
       return {
         ok: false,
-        error: { code: 'duplicate-header', message: `ヘッダー列が重複しています: "${duplicate}"` },
+        error: { code: 'duplicate-header', message: `Duplicate header column: "${duplicate}"` },
       }
     }
     return { ok: true, sheet }
@@ -215,7 +215,7 @@ export async function parse(
         ok: false,
         error: {
           code: 'invalid-option',
-          message: `スキーマの prop が重複しています: "${dupProp}"`,
+          message: `Duplicate schema prop: "${dupProp}"`,
         },
       }
     }
@@ -225,7 +225,7 @@ export async function parse(
         ok: false,
         error: {
           code: 'missing-column',
-          message: `スキーマの必須列がヘッダーにありません: ${missing.map((h) => `"${h}"`).join(', ')}`,
+          message: `Required schema column(s) missing from header: ${missing.map((h) => `"${h}"`).join(', ')}`,
         },
       }
     }
@@ -277,7 +277,7 @@ export async function parseFile(
     buffer = await file.arrayBuffer()
   } catch {
     // ファイル破損（invalid-xlsx）とは別事象なので読み込み失敗として区別する
-    return { ok: false, error: { code: 'read-failed', message: 'ファイルを読み込めませんでした' } }
+    return { ok: false, error: { code: 'read-failed', message: 'Failed to read the file' } }
   }
 
   // schema の有無で型付きオーバーロードへ振り分ける（impl 同士はオーバーロードを経由する）。

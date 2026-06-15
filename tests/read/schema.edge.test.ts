@@ -22,13 +22,13 @@ describe('applySchema 型強制の分岐', () => {
     expect(first(s, { f: 'TRUE' }).value?.f).toBe(true)
     expect(first(s, { f: '0' }).value?.f).toBe(false)
     expect(first(s, { f: 1 }).value?.f).toBe(true)
-    expect(first(s, { f: 'はい' }).errors[0]?.message).toBe('真偽値ではありません')
+    expect(first(s, { f: 'はい' }).errors[0]?.code).toBe('non-boolean')
   })
 
   it('number: 数値文字列は変換し非数値はエラーにする', () => {
     const s = { n: { prop: 'n', type: 'number' } } satisfies Schema
     expect(first(s, { n: '42' }).value?.n).toBe(42)
-    expect(first(s, { n: 'x' }).errors[0]?.message).toBe('数値ではありません')
+    expect(first(s, { n: 'x' }).errors[0]?.code).toBe('non-number')
   })
 
   it('number: 10 進の符号・小数・指数・前後空白は受理する', () => {
@@ -42,10 +42,10 @@ describe('applySchema 型強制の分岐', () => {
   it('number: 16 進等の非 10 進表記・真偽/日付セル・空白のみはエラーにする', () => {
     const s = { n: { prop: 'n', type: 'number' } } satisfies Schema
     // Number() 丸投げだと 0x10 → 16 / true → 1 / Date → エポックms / " " → 0 になってしまう
-    expect(first(s, { n: '0x10' }).errors[0]?.message).toBe('数値ではありません')
-    expect(first(s, { n: true }).errors[0]?.message).toBe('数値ではありません')
-    expect(first(s, { n: new Date(2020, 0, 1) }).errors[0]?.message).toBe('数値ではありません')
-    expect(first(s, { n: ' ' }).errors[0]?.message).toBe('数値ではありません')
+    expect(first(s, { n: '0x10' }).errors[0]?.code).toBe('non-number')
+    expect(first(s, { n: true }).errors[0]?.code).toBe('non-number')
+    expect(first(s, { n: new Date(2020, 0, 1) }).errors[0]?.code).toBe('non-number')
+    expect(first(s, { n: ' ' }).errors[0]?.code).toBe('non-number')
   })
 
   it('string: 日付セルは ISO 8601 文字列になる（実装依存の Date.toString にしない）', () => {
@@ -75,8 +75,8 @@ describe('applySchema 型強制の分岐', () => {
     const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
     expect(first(s, { d: new Date(2020, 0, 1) }).value?.d).toBeInstanceOf(Date)
     expect((first(s, { d: '2020-01-01' }).value?.d as Date).getFullYear()).toBe(2020)
-    expect(first(s, { d: 'not-a-date' }).errors[0]?.message).toBe('日付ではありません')
-    expect(first(s, { d: 123 }).errors[0]?.message).toBe('日付ではありません')
+    expect(first(s, { d: 'not-a-date' }).errors[0]?.code).toBe('non-date')
+    expect(first(s, { d: 123 }).errors[0]?.code).toBe('non-date')
   })
 
   it('date: 日付のみ ISO は TZ に依らずローカル 0:00 で構築する（暦日がずれない）', () => {
@@ -95,12 +95,12 @@ describe('applySchema 型強制の分岐', () => {
   it('date: ISO 以外の形式・不正な暦日はエラーにする', () => {
     const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
     // 実装依存だったスラッシュ区切り・米国式・月名は受理しない
-    expect(first(s, { d: '2020/01/01' }).errors[0]?.message).toBe('日付ではありません')
-    expect(first(s, { d: '01/15/2020' }).errors[0]?.message).toBe('日付ではありません')
-    expect(first(s, { d: 'Jan 15 2020' }).errors[0]?.message).toBe('日付ではありません')
+    expect(first(s, { d: '2020/01/01' }).errors[0]?.code).toBe('non-date')
+    expect(first(s, { d: '01/15/2020' }).errors[0]?.code).toBe('non-date')
+    expect(first(s, { d: 'Jan 15 2020' }).errors[0]?.code).toBe('non-date')
     // 存在しない暦日
-    expect(first(s, { d: '2020-02-30' }).errors[0]?.message).toBe('日付ではありません')
-    expect(first(s, { d: '2020-13-01' }).errors[0]?.message).toBe('日付ではありません')
+    expect(first(s, { d: '2020-02-30' }).errors[0]?.code).toBe('non-date')
+    expect(first(s, { d: '2020-13-01' }).errors[0]?.code).toBe('non-date')
   })
 
   it('空セルで required でも default でもないとき null を返す', () => {
@@ -110,6 +110,6 @@ describe('applySchema 型強制の分岐', () => {
 
   it('スキーマ列がシートに無いときも null/必須エラーにする', () => {
     const s = { 無い列: { prop: 'missing', type: 'string', required: true } } satisfies Schema
-    expect(first(s, {}).errors[0]?.message).toBe('必須です')
+    expect(first(s, {}).errors[0]?.code).toBe('required')
   })
 })

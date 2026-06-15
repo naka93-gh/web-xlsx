@@ -90,7 +90,7 @@ export async function build(
         ok: false,
         error: {
           code: 'invalid-option',
-          message: `スキーマの prop が重複しています: "${dupProp}"`,
+          message: `Duplicate schema prop: "${dupProp}"`,
         },
       }
     }

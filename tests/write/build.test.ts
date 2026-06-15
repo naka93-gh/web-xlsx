@@ -89,7 +89,7 @@ describe('build → parse ラウンドトリップ（スキーマ）', () => {
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.error.code).toBe('invalid-option')
-    expect(result.error.message).toMatch(/prop が重複/)
+    expect(result.error.message).toMatch(/Duplicate schema prop/)
   })
 })
 

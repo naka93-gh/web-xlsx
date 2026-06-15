@@ -6,12 +6,24 @@ import type { FileError, Schema } from '../core/types.js'
 // 行単位エラー
 // ───────────────────────────────────────────
 /**
+ * 行単位エラーの種別（`message` の文言に依らずプログラムで分岐・多言語化するためのコード）
+ *
+ * - `required` … 必須列（{@link RowError.column}）が空
+ * - `non-number` / `non-boolean` / `non-date` … 列の `type` への変換に失敗（期待型ごと）
+ * - `validate` … ユーザーの `validate` がメッセージを返した（または throw した）
+ */
+export type RowErrorCode = 'required' | 'non-number' | 'non-boolean' | 'non-date' | 'validate'
+
+/**
  * 行単位の検証エラー
  *
  * ファイルは開けたが、特定の行・列がスキーマ検証に通らなかった場合に
  * {@link ParseResult} の `errors` に積まれる
  */
 export type RowError = {
+  /** 失敗の種別（{@link RowErrorCode}）。`message` に依らない分岐・多言語化に使う */
+  code: RowErrorCode
+
   /**
    * 1 始まりの行番号（シート上の実行番号）
    */

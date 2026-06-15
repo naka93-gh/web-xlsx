@@ -128,7 +128,7 @@ export function readSheet(
   if (options.headerRow !== undefined) {
     const h = options.headerRow
     if (!Number.isInteger(h) || h < 1) {
-      throw new OptionError(`headerRow は 1 以上の整数で指定してください: ${h}`)
+      throw new OptionError(`headerRow must be an integer >= 1: ${h}`)
     }
   }
 

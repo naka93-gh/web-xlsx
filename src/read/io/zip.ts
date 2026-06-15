@@ -61,7 +61,7 @@ const utf8 = new TextDecoder()
  */
 async function inflateRaw(data: Uint8Array<ArrayBuffer>, limit: number): Promise<Uint8Array> {
   if (typeof DecompressionStream === 'undefined') {
-    throw new ZipError('unsupported', 'DecompressionStream が利用できない環境です')
+    throw new ZipError('unsupported', 'DecompressionStream is not available in this environment')
   }
   let decompressor: DecompressionStream
   try {
@@ -69,7 +69,10 @@ async function inflateRaw(data: Uint8Array<ArrayBuffer>, limit: number): Promise
   } catch {
     // 構築自体が失敗するのは deflate-raw 未対応（Node 20.11 以下・旧ブラウザ）
     // 破損扱い(invalid-xlsx)でなく環境要因として明示する
-    throw new ZipError('unsupported', 'DecompressionStream が deflate-raw に未対応の環境です')
+    throw new ZipError(
+      'unsupported',
+      'DecompressionStream does not support deflate-raw in this environment',
+    )
   }
   const stream = new Blob([data]).stream().pipeThrough(decompressor)
   const reader = stream.getReader()
@@ -82,14 +85,14 @@ async function inflateRaw(data: Uint8Array<ArrayBuffer>, limit: number): Promise
       size += value.byteLength
       if (size > limit) {
         await reader.cancel() // 上流の展開を止めてメモリ膨張を防ぐ
-        throw new ZipError('too-large', `解凍サイズが上限(${limit} バイト)を超えました`)
+        throw new ZipError('too-large', `Decompressed size exceeded the limit (${limit} bytes)`)
       }
       chunks.push(value)
     }
   } catch (e) {
     // 壊れた deflate ストリームの例外は実装依存の英語メッセージなので包み直す
     if (e instanceof ZipError) throw e
-    throw new ZipError('invalid', '圧縮データが壊れています')
+    throw new ZipError('invalid', 'Compressed data is corrupt')
   }
 
   const out = new Uint8Array(size)
@@ -106,12 +109,12 @@ async function inflateRaw(data: Uint8Array<ArrayBuffer>, limit: number): Promise
  */
 function findEocd(bytes: Uint8Array, view: DataView): number {
   const n = bytes.length
-  if (n < 22) throw new ZipError('not-zip', 'ZIP として短すぎます')
+  if (n < 22) throw new ZipError('not-zip', 'Too short to be a ZIP')
   const minPos = Math.max(0, n - 22 - 0xffff)
   for (let p = n - 22; p >= minPos; p--) {
     if (view.getUint32(p, true) === SIG_EOCD) return p
   }
-  throw new ZipError('not-zip', 'EOCD が見つかりません（ZIP ではありません）')
+  throw new ZipError('not-zip', 'EOCD not found (not a ZIP)')
 }
 
 /**
@@ -138,7 +141,7 @@ export async function openZip(
   const total = view.getUint16(eocd + 10, true)
   const cdOffset = view.getUint32(eocd + 16, true)
   if (total === 0xffff || cdOffset === 0xffffffff) {
-    throw new ZipError('invalid', 'ZIP64 は未対応です')
+    throw new ZipError('invalid', 'ZIP64 is not supported')
   }
 
   // 中央ディレクトリを走査してエントリ表（名前 → 位置・サイズ）を作る
@@ -147,7 +150,7 @@ export async function openZip(
   for (let idx = 0; idx < total; idx++) {
     // 切断された CD で DataView の RangeError（英語の内部メッセージ）を漏らさない
     if (p + 46 > view.byteLength || view.getUint32(p, true) !== SIG_CDH) {
-      throw new ZipError('invalid', '中央ディレクトリが壊れています')
+      throw new ZipError('invalid', 'Central directory is corrupt')
     }
     const method = view.getUint16(p + 10, true)
     const compressedSize = view.getUint32(p + 20, true)
@@ -163,7 +166,7 @@ export async function openZip(
       uncompressedSize === 0xffffffff ||
       localOffset === 0xffffffff
     ) {
-      throw new ZipError('invalid', 'ZIP64 は未対応です')
+      throw new ZipError('invalid', 'ZIP64 is not supported')
     }
     const name = utf8.decode(bytes.subarray(p + 46, p + 46 + nameLen))
     entries.set(name, { method, compressedSize, uncompressedSize, localOffset })
@@ -180,14 +183,14 @@ export async function openZip(
 
     // エントリ表から位置を引く
     const entry = entries.get(name)
-    if (!entry) throw new ZipError('invalid', `エントリが見つかりません: ${name}`)
+    if (!entry) throw new ZipError('invalid', `Entry not found: ${name}`)
 
     // ローカルヘッダを検証し、圧縮データの開始位置を求める
     if (
       entry.localOffset + 30 > view.byteLength ||
       view.getUint32(entry.localOffset, true) !== SIG_LFH
     ) {
-      throw new ZipError('invalid', 'ローカルヘッダが壊れています')
+      throw new ZipError('invalid', 'Local header is corrupt')
     }
 
     // name/extra 長はローカルヘッダ自身から読む（中央ディレクトリと異なりうる）
@@ -198,7 +201,7 @@ export async function openZip(
     // stored(method 0) は宣言 compressedSize が実体より大きくても deflate のように壊れず
     // 素通りし、subarray が後続バイト（CD 等）を含んだまま返す silent corruption になりうる
     if (dataStart + entry.compressedSize > cdOffset) {
-      throw new ZipError('invalid', 'エントリのデータ範囲がアーカイブ境界を超えています')
+      throw new ZipError('invalid', 'Entry data range exceeds the archive boundary')
     }
     const data = bytes.subarray(dataStart, dataStart + entry.compressedSize)
 
@@ -206,7 +209,10 @@ export async function openZip(
     // 残り予算（全体上限 − 既展開分）と単体上限の小さい方をこのエントリの上限に
     const limit = Math.min(maxEntryBytes, maxTotalBytes - totalDecompressed)
     if (limit < 0) {
-      throw new ZipError('too-large', `解凍サイズが全体上限(${maxTotalBytes} バイト)を超えました`)
+      throw new ZipError(
+        'too-large',
+        `Decompressed size exceeded the total limit (${maxTotalBytes} bytes)`,
+      )
     }
 
     // 圧縮方式ごとに展開する（無圧縮はそのまま、deflate は展開、それ以外は非対応）
@@ -214,17 +220,17 @@ export async function openZip(
     if (entry.method === 0) {
       // 無圧縮は入力バッファ内に収まっており膨張しないが、累積予算には数える
       if (data.byteLength > limit) {
-        throw new ZipError('too-large', `解凍サイズが上限(${limit} バイト)を超えました`)
+        throw new ZipError('too-large', `Decompressed size exceeded the limit (${limit} bytes)`)
       }
       out = data
     } else if (entry.method === 8) {
       // 宣言値が正直に大きい爆弾は展開前に弾く（嘘の宣言値はストリーム側で打ち切る）
       if (entry.uncompressedSize > limit) {
-        throw new ZipError('too-large', `解凍サイズが上限(${limit} バイト)を超えました`)
+        throw new ZipError('too-large', `Decompressed size exceeded the limit (${limit} bytes)`)
       }
       out = await inflateRaw(data, limit)
     } else {
-      throw new ZipError('invalid', `未対応の圧縮方式です: ${entry.method}`)
+      throw new ZipError('invalid', `Unsupported compression method: ${entry.method}`)
     }
     // 累積に加えてキャッシュし返す
     totalDecompressed += out.byteLength
