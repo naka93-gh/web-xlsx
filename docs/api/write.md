@@ -1,20 +1,22 @@
-# 書き出し
+# Write
 
-## 関数一覧
+> 📖 This document is an AI-generated translation. The authoritative source is the Japanese version: [write.ja.md](./write.ja.md).
 
-| 関数    | 用途            | 引数    | 戻り値                 |
-| ------- | --------------- | ------- | ---------------------- |
-| `build` | 行データ → xlsx | `Row[]` | `Promise<BuildResult>` |
+## Function list
 
-## 使い方
+| Function | Purpose         | Argument | Return value           |
+| -------- | --------------- | -------- | ---------------------- |
+| `build`  | row data → xlsx | `Row[]`  | `Promise<BuildResult>` |
 
-行データを xlsx バイト列に書き出す。圧縮が非同期なので `Promise` を返す。失敗は例外でなく `BuildResult`（read の `ParseResult` と対称の Result）で返り、`ok` で分岐する。`ok: true` のとき `data` が `Uint8Array`。
+## Usage
 
-第 2 引数は `{ schema?, options? }`。列順とヘッダーを決める `schema` と、シート名などの出力調整 `options`（[BuildOptions](#オプションbuildoptions)）を分けて渡す。どちらも省略できる。
+Writes row data into xlsx bytes. Because compression is asynchronous, it returns a `Promise`. Failures come back not as exceptions but as a `BuildResult` (a Result type symmetric to read's `ParseResult`), and you branch on `ok`. When `ok: true`, `data` holds a `Uint8Array`.
 
-### スキーマあり
+The second argument is `{ schema?, options? }`. Pass the `schema` that decides column order and headers separately from `options`, which adjusts output such as the sheet name ([BuildOptions](#options-buildoptions)). Both are optional.
 
-スキーマを渡すと、キー順が列順、キーがヘッダー、各行の値は `prop` で引く。read に使ったスキーマをそのまま使える（詳細は [スキーマ](./schema.md)）。
+### With a schema
+
+When you pass a schema, key order becomes column order, keys become headers, and each row's values are looked up via `prop`. You can reuse the same schema you used for read (see [Schema](./schema.md) for details).
 
 ```ts
 import { build } from "web-xlsx/write";
@@ -25,35 +27,35 @@ if (result.ok) {
 }
 ```
 
-### スキーマ無し
+### Without a schema
 
-行のキーがそのままヘッダーになり、列順は全行を通して最初に現れた順になる。
+Each row's keys become headers as-is, and column order follows the order in which keys first appear across all rows.
 
 ```ts
 import { build } from "web-xlsx/write";
 
 const result = await build([
-  { 名前: "田中太郎", 年齢: 30, 入社日: new Date(2020, 3, 1) },
-  { 名前: "鈴木花子", 年齢: 25 },
+  { Name: "John Smith", Age: 30, HireDate: new Date(2020, 3, 1) },
+  { Name: "Jane Doe", Age: 25 },
 ]);
 ```
 
 > [!NOTE]
-> `Cell`（`string` / `number` / `boolean` / `Date` / `null`）以外の値は文字列化して文字列セルにする。`undefined` / `null` は空セルになる。
+> Values other than `Cell` (`string` / `number` / `boolean` / `Date` / `null`) are stringified into string cells. `undefined` / `null` become empty cells.
 
-## オプション（BuildOptions）
+## Options (BuildOptions)
 
-出力の調整は第 2 引数の `options` に渡す。`build(rows, { options: { sheetName: "社員" } })` のように、`schema` とは別のキーにまとめる。
+Pass output adjustments through `options` in the second argument. Group them under a key separate from `schema`, like `build(rows, { options: { sheetName: "Employees" } })`.
 
-| オプション  | 既定       | 説明                                                                                            |
-| ----------- | ---------- | ----------------------------------------------------------------------------------------------- |
-| `sheetName` | `"Sheet1"` | 出力シート名                                                                                    |
-| `style`     | `true`     | ヘッダー太字・先頭行固定・列幅自動を付ける。`false` で無効化。日付の表示書式は常に有効          |
-| `utc`       | `false`    | `Date` を UTC 固定でシリアル値にする。`parse` の `utc` と対で、読み書きで同じ値なら往復一致する |
+| Option      | Default    | Description                                                                                                                    |
+| ----------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `sheetName` | `"Sheet1"` | Output sheet name                                                                                                              |
+| `style`     | `true`     | Adds bold headers, a frozen top row, and automatic column widths. Set `false` to disable. Date display formatting is always on |
+| `utc`       | `false`    | Serializes `Date` values using fixed UTC. Paired with `parse`'s `utc`, so equal values round-trip across read and write        |
 
-## エラー処理
+## Error handling
 
-`BuildResult` は `ok` で分岐する。`ok: false` はスキーマの設定ミスなどで書き出せなかった場合で、`error` は read と共通の `FileError`（`code` / `message`）。write は行単位の検証を持たないため、read のような `errors` 配列は無い。
+Branch on `ok` for `BuildResult`. `ok: false` means the write failed, for example due to a schema misconfiguration, and `error` is the `FileError` (`code` / `message`) shared with read. Since write has no per-row validation, there is no `errors` array like read has.
 
 ```ts
 const result = await build(rows, { schema });
@@ -64,13 +66,13 @@ if (!result.ok) {
 }
 ```
 
-### エラーコード
+### Error codes
 
-| code             | 意味                                                 |
-| ---------------- | ---------------------------------------------------- |
-| `invalid-option` | スキーマの指定値が不正（複数列が同じ `prop` を持つ） |
+| code             | Meaning                                                       |
+| ---------------- | ------------------------------------------------------------- |
+| `invalid-option` | Invalid schema value (multiple columns share the same `prop`) |
 
-## ブラウザでダウンロードさせる
+## Triggering a download in the browser
 
 ```ts
 import { build } from "web-xlsx/write";

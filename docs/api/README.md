@@ -1,15 +1,16 @@
-# web-xlsx ドキュメント
+# web-xlsx Documentation
 
-ブラウザ・Node に対応した TypeScript 製の xlsx read/write ライブラリ。
+> 📖 This document is an AI-generated translation. The authoritative source is the Japanese version: [README.ja.md](./README.ja.md).
 
-| import           | 用途     | 公開                  |
-| ---------------- | -------- | --------------------- |
-| `web-xlsx`       | 読み取り | `parse` / `parseFile` |
-| `web-xlsx/write` | 書き出し | `build`               |
+A TypeScript xlsx read/write library that works in both the browser and Node.
 
-読み取りと書き出しは別エントリなので、読むだけなら書き出しコードはバンドルに含まれない。
+| import           | Purpose | Exports               |
+| ---------------- | ------- | --------------------- |
+| `web-xlsx`       | Reading | `parse` / `parseFile` |
+| `web-xlsx/write` | Writing | `build`               |
 
-- [読み取り](./read.md) — `parse` / `parseFile`、`ParseOptions`、エラー処理
-- [書き出し](./write.md) — `build`、`BuildOptions`
-- [スキーマ](./schema.md) — 列定義・検証の順序・型変換ルール
-- [型リファレンス](./types.md) — 公開型の一覧
+Reading and writing are separate entry points, so the writing code is never bundled when you only need to read.
+
+- [Reading](./read.md) — `parse` / `parseFile`, `ParseOptions`, error handling
+- [Writing](./write.md) — `build`, `BuildOptions`
+- [Schema](./schema.md) — column definitions, validation order, type-conversion rules

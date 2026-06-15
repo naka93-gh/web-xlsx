@@ -1,21 +1,23 @@
-# 読み取り
+# Reading
 
-## 関数一覧
+> 📖 This document is an AI-generated translation. The authoritative source is the Japanese version: [read.ja.md](./read.ja.md).
 
-| 関数        | 用途            | 引数                         | 戻り値                 |
+## Function list
+
+| Function    | Use case        | Argument                     | Return value           |
 | ----------- | --------------- | ---------------------------- | ---------------------- |
 | `parseFile` | `File` / `Blob` | `File` / `Blob`              | `Promise<ParseResult>` |
-| `parse`     | バイト列        | `ArrayBuffer` / `Uint8Array` | `Promise<ParseResult>` |
+| `parse`     | Byte array      | `ArrayBuffer` / `Uint8Array` | `Promise<ParseResult>` |
 
-## 使い方
+## Usage
 
-スキーマを渡さなければ、セルは Excel 上の型（文字列・数値・真偽・日付）のまま `Row` 配列で返る。
+Without a schema, cells are returned as a `Row` array, keeping their Excel types (string, number, boolean, date).
 
-第 2 引数は `{ schema?, options? }`。列を型付け・検証する `schema` と、シートや範囲などの取り込み調整 `options`（[ParseOptions](#オプションparseoptions)）を分けて渡す。どちらも省略できる。
+The second argument is `{ schema?, options? }`. Pass the `schema` that types and validates columns separately from the `options` that adjust parsing such as sheet and range ([ParseOptions](#options-parseoptions)). Both are optional.
 
 ### parseFile
 
-`File` / `Blob` を読む。内部で `arrayBuffer()` に展開して `parse` を呼ぶため、挙動は `parse` と同じ。
+Reads a `File` / `Blob`. Internally it expands the input via `arrayBuffer()` and calls `parse`, so its behavior matches `parse`.
 
 ```ts
 import { parseFile } from "web-xlsx";
@@ -23,13 +25,13 @@ import { parseFile } from "web-xlsx";
 const result = await parseFile(file);
 if (result.ok) {
   console.log(result.data);
-  // [{ 名前: "田中太郎", 年齢: 30, 入社日: Date, 在籍: true }, ...]
+  // [{ Name: "John Smith", Age: 30, HireDate: Date, Active: true }, ...]
 }
 ```
 
 ### parse
 
-バイト列（`ArrayBuffer` / `Uint8Array`）を読む。
+Reads a byte array (`ArrayBuffer` / `Uint8Array`).
 
 ```ts
 import { parse } from "web-xlsx";
@@ -38,43 +40,43 @@ const result = await parse(bytes);
 ```
 
 > [!NOTE]
-> 列を型付け・検証するスキーマは [スキーマ](./schema.md) を参照。
+> For the schema that types and validates columns, see [Schema](./schema.md).
 
-## ヘッダー無しで読む
+## Reading without a header
 
-ヘッダー行が無い・複数ある・定まらない表は `options.header: false` で読む。ヘッダーを解決せず各行を `Cell[]` として位置で取り込み、1 行目から全て `data` に入る。
+For tables that have no header row, multiple header rows, or no fixed header, read with `options.header: false`. The header is not resolved; each row is parsed positionally as `Cell[]`, and every row from the first one goes into `data`.
 
 ```ts
 const result = await parse(bytes, { options: { header: false } });
 if (result.ok) {
   // result.data: Cell[][]
-  console.log(result.data[0]); // 1 行目 → ["名前", "年齢", "入社日"]
-  console.log(result.data[1]?.[0]); // 2 行目 1 列目 → "田中太郎"
+  console.log(result.data[0]); // row 1 → ["Name", "Age", "HireDate"]
+  console.log(result.data[1]?.[0]); // row 2, column 1 → "John Smith"
 }
 ```
 
-各行は列 A（index 0）からシートの最大使用列まで `null` 埋めされ、全行が同じ長さの矩形になる。`range` を渡すと範囲の左端が index 0、右端まで埋まる。
+Each row is padded with `null` from column A (index 0) up to the sheet's last used column, so every row forms a rectangle of the same length. Passing `range` makes the left edge of the range index 0 and pads up to the right edge.
 
 > [!WARNING]
-> `options.header: false` は `schema` と併用できない。`headerRow` も無視される。
+> `options.header: false` cannot be combined with `schema`. `headerRow` is also ignored.
 
-## オプション（ParseOptions）
+## Options (ParseOptions)
 
-取り込みの調整は第 2 引数の `options` に渡す。`parse(bytes, { options: { sheet: 1, range: "A1:D100" } })` のように、`schema` とは別のキーにまとめる。
+Parsing adjustments go in the `options` of the second argument. Group them under a key separate from `schema`, as in `parse(bytes, { options: { sheet: 1, range: "A1:D100" } })`.
 
-| オプション      | 既定                    | 説明                                                                                                           |
-| --------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `sheet`         | 先頭シート              | 読むシートを名前または 0 始まりの index で指定                                                                 |
-| `headerRow`     | 最初の非空行            | ヘッダー行の行番号（1 始まり）。0 以下・非整数は `invalid-option`                                              |
-| `range`         | 自動                    | データ範囲を限定。`"A1:D100"`（矩形）/ `"A:D"`（列）/ `"2:100"`（行）。不正なら `invalid-range`                |
-| `skipEmptyRows` | `true`                  | 空行を読み飛ばす                                                                                               |
-| `header`        | （ヘッダーあり）        | `false` でヘッダーを解決せず行を `Cell[][]` で返す。`schema` 併用不可・`headerRow` 無視                        |
-| `utc`           | `false`                 | 日付を UTC 固定で解釈する。既定はローカル時刻。書き出しと同じ値を使うこと                                      |
-| `limits`        | 単体 300MB / 全体 600MB | ZIP 解凍サイズの上限（ZIP 爆弾対策）。`maxEntryBytes`（単体）/ `maxTotalBytes`（全体）が上限超過で `too-large` |
+| Option          | Default                       | Description                                                                                                                                                        |
+| --------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sheet`         | First sheet                   | The sheet to read, by name or 0-based index                                                                                                                        |
+| `headerRow`     | First non-empty row           | The header row number (1-based). Values ≤ 0 or non-integers raise `invalid-option`                                                                                 |
+| `range`         | Automatic                     | Limits the data range. `"A1:D100"` (rectangle) / `"A:D"` (columns) / `"2:100"` (rows). Invalid values raise `invalid-range`                                        |
+| `skipEmptyRows` | `true`                        | Skips empty rows                                                                                                                                                   |
+| `header`        | (header present)              | With `false`, the header is not resolved and each row is returned as `Cell[]` (the result is `Cell[][]`). Cannot be combined with `schema`; `headerRow` is ignored |
+| `utc`           | `false`                       | Interprets dates as fixed UTC. The default is local time. Use the same value as when writing                                                                       |
+| `limits`        | 300MB per entry / 600MB total | Upper limit on ZIP decompression size (ZIP bomb protection). Exceeding `maxEntryBytes` (per entry) or `maxTotalBytes` (total) raises `too-large`                   |
 
-## エラー処理
+## Error handling
 
-`ParseResult` は `ok` で分岐する。`ok: false` はファイルが開けなかった場合（壊れている・xlsx でない・対象シートが無い 等）。`ok: true` でも `errors` に行単位の検証エラーが入りうる。
+Branch on `ok` for `ParseResult`. `ok: false` means the file could not be opened (corrupted, not an xlsx, target sheet missing, etc.). Even with `ok: true`, `errors` may contain per-row validation errors.
 
 ```ts
 const result = await parse(bytes, { schema });
@@ -82,23 +84,33 @@ if (!result.ok) {
   console.error(result.error.code, result.error.message);
 } else {
   await bulkInsert(result.data);
-  for (const e of result.errors) console.warn(`${e.row}行目: ${e.message}`);
+  for (const e of result.errors) console.warn(`Row ${e.row}: ${e.message}`);
 }
 ```
 
-### エラーコード
+### Error codes
 
-| code                      | 意味                                                                    |
-| ------------------------- | ----------------------------------------------------------------------- |
-| `not-zip`                 | ZIP として読めない                                                      |
-| `invalid-xlsx`            | 必要なパーツ（workbook / sheet 等）が欠落、または中身が壊れている       |
-| `sheet-not-found`         | 指定したシートが無い                                                    |
-| `invalid-range`           | `range` オプションの形式が不正                                          |
-| `invalid-option`          | オプション/スキーマの指定値が不正（`headerRow` の 0・非整数、スキーマの `prop` 重複） |
-| `duplicate-header`        | ヘッダー列名が重複し、列の対応が一意に決まらない                        |
-| `missing-column`          | スキーマの必須列（`required` かつ `defaultValue` 無し）がヘッダーに無い |
-| `unsupported-environment` | `DecompressionStream` 非対応                                            |
-| `too-large`               | 解凍後サイズが上限超過（ZIP 爆弾対策）                                  |
-| `read-failed`             | `File` / `Blob` の読み込みに失敗（`parseFile` のみ）                    |
+| code                      | Meaning                                                                                             |
+| ------------------------- | --------------------------------------------------------------------------------------------------- |
+| `not-zip`                 | Cannot be read as a ZIP                                                                             |
+| `invalid-xlsx`            | A required part (workbook / sheet, etc.) is missing, or its content is corrupted                    |
+| `sheet-not-found`         | The specified sheet does not exist                                                                  |
+| `invalid-range`           | The `range` option has an invalid format                                                            |
+| `invalid-option`          | An option/schema value is invalid (`headerRow` of 0 or non-integer, duplicate `prop` in the schema) |
+| `duplicate-header`        | Header column names are duplicated, so column mapping is not uniquely determined                    |
+| `missing-column`          | A required schema column (`required` without `defaultValue`) is missing from the header             |
+| `unsupported-environment` | `DecompressionStream` is not supported                                                              |
+| `too-large`               | Decompressed size exceeds the limit (ZIP bomb protection)                                           |
+| `read-failed`             | Failed to read the `File` / `Blob` (`parseFile` only)                                               |
 
-`ok: true` の `errors` に入る行エラーは、`row`（1 始まりの行番号）・`column`（該当列、行全体のエラーなら無し）・`value`（失敗した値）・`message` を持つ。
+Row errors in `errors` (when `ok: true`) carry `code` (kind), `row` (1-based row number), `column` (the relevant column, absent for whole-row errors), `value` (the failing value), and `message`. Since `message` is always in English, branch on `code` when you want to control the displayed text.
+
+#### Row error codes (`RowError.code`)
+
+| code          | Meaning                                                        |
+| ------------- | -------------------------------------------------------------- |
+| `required`    | A required column (`required` without `defaultValue`) is empty |
+| `non-number`  | Conversion to a `type: 'number'` column failed                 |
+| `non-boolean` | Conversion to a `type: 'boolean'` column failed                |
+| `non-date`    | Conversion to a `type: 'date'` column failed                   |
+| `validate`    | The user's `validate` returned a message (or threw)            |

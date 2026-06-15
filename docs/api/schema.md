@@ -1,84 +1,86 @@
-# スキーマ
+# Schema
 
-## 列定義（Column）
+> 📖 This document is an AI-generated translation. The authoritative source is the Japanese version: [schema.ja.md](./schema.ja.md).
 
-各列は次のフィールドを持つ。
+## Column definition (Column)
 
-| フィールド     | 役割                                                                                                                                                                  |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `prop`         | 出力プロパティ名。読み取り後の行はこのキーを持つ。複数列で重複すると `invalid-option`（read / build とも）                                                            |
-| `type`         | 期待する型（`'string'` / `'number'` / `'boolean'` / `'date'`）。下の変換ルールを参照                                                                                  |
-| `required`     | `true` で未入力（空セル）を行エラーにする                                                                                                                             |
-| `defaultValue` | 空セルのときに補う値。型変換・`validate` を通さず出力に入るため、型は列の `type` に対応する TS 型（`'date'` なら `Date`）に限定。指定すると `required` 違反にならない |
-| `validate`     | 追加検証。メッセージ文字列を返すとその行をエラーに、`null` で通過                                                                                                     |
+Each column has the following fields.
 
-## 使い方
+| Field          | Role                                                                                                                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `prop`         | Output property name. Parsed rows are keyed by this. Duplicates across columns raise `invalid-option` (both read and build)                                                                                                                            |
+| `type`         | Expected type (`'string'` / `'number'` / `'boolean'` / `'date'`). See the conversion rules below                                                                                                                                                       |
+| `required`     | When `true`, an empty cell (no input) becomes a row error                                                                                                                                                                                              |
+| `defaultValue` | Value substituted for an empty cell. It skips type conversion and `validate` and goes straight to the output, so its type is restricted to the TS type matching the column's `type` (`Date` for `'date'`). Setting it suppresses `required` violations |
+| `validate`     | Extra validation. Returning a message string marks the row as an error; `null` passes                                                                                                                                                                  |
 
-スキーマは `defineSchema(...)` で定義し、`parse` / `parseFile` / `build` の第 2 引数（`schema`）に渡す。`defineSchema` で包むと `prop` のリテラルが保たれ `InferRow` が正しく推論される（素の `satisfies Schema` は `prop` が `string` に widen し、行の型が全列の union に潰れる）。
+## Usage
+
+Define a schema with `defineSchema(...)` and pass it as the second argument (`schema`) of `parse` / `parseFile` / `build`. Wrapping with `defineSchema` preserves the `prop` literals so that `InferRow` infers correctly (a bare `satisfies Schema` widens `prop` to `string`, collapsing the row type into a union of all columns).
 
 ```ts
 import { parse, defineSchema } from "web-xlsx";
 
 const schema = defineSchema({
-  名前: { prop: "name", type: "string", required: true },
-  年齢: { prop: "age", type: "number" },
-  入社日: { prop: "hireDate", type: "date" },
+  Name: { prop: "name", type: "string", required: true },
+  Age: { prop: "age", type: "number" },
+  HireDate: { prop: "hireDate", type: "date" },
 });
 
 const result = await parse(bytes, { schema });
 if (result.ok) {
   // result.data: { name: string; age: number | null; hireDate: Date | null }[]
   for (const e of result.errors)
-    console.warn(`${e.row}行目 ${e.column}: ${e.message}`);
+    console.warn(`Row ${e.row}, ${e.column}: ${e.message}`);
 }
 ```
 
-検証に落ちた行は `data` から外れ、行番号付きで `errors` に入る。正常行だけ取り込み、エラー行は提示する、といった一括取り込みに使える。
+Rows that fail validation are dropped from `data` and collected in `errors` with their row numbers. This suits bulk imports where you take only the valid rows and surface the failing ones.
 
-## 検証の順序
+## Validation order
 
-各セルは次の順で処理する。
+Each cell is processed in this order.
 
-1. 空セル（`null` または空文字）なら、`defaultValue` があればそれを入れる。無ければ `required` の場合は行エラー、それ以外は `null`。ここで打ち切る
-2. `validate` を呼ぶ。型変換前の生の `Cell` を受け取る。メッセージを返したら行エラー
-3. `type` へ変換。失敗したら行エラー
+1. If the cell is empty (`null` or an empty string), substitute `defaultValue` if present. Otherwise, raise a row error (`code: 'required'`) when `required`, or yield `null` otherwise. Processing stops here
+2. Call `validate`. It receives the raw `Cell` before type conversion. Returning a message raises a row error (`code: 'validate'`)
+3. Convert to `type`. On failure, raise a row error (`code: 'non-number'` / `'non-boolean'` / `'non-date'` by expected type)
 
-1 列でもエラーになると、その行は丸ごと `data` から外れて `errors` に積まれる。
-
-> [!NOTE]
-> 必須列（`required` かつ `defaultValue` 無し）がヘッダーに存在しないと、全行が必須エラーになるため、行エラーを量産せず `missing-column` のファイルエラー（`ok: false`）で返す。
-
-## 型変換ルール
-
-| `type`    | 受理して変換するもの                                                                                              | エラーになるもの                                         |
-| --------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `string`  | 全セル。数値セルは元テキスト（大整数 ID の桁落ち防止）、日付セルは ISO 8601 文字列、真偽セルは `'true'`/`'false'` | なし                                                     |
-| `number`  | 数値セル、10 進表記の文字列（符号・小数・指数可、前後空白は無視）                                                 | 10 進にならない文字列（`0x10` 等を含む）、真偽・日付セル |
-| `boolean` | 真偽セル、`true`/`false`/`1`/`0`（大文字小文字無視）                                                              | それ以外                                                 |
-| `date`    | 日付セル、ISO 8601 文字列                                                                                         | ISO 8601 でない文字列、その他の型                        |
+If even one column errors, the whole row is dropped from `data` and pushed onto `errors`. Each row error carries `code` (kind), `row`, `column`, `value`, and `message`. The `message` is fixed in English, so branch on `code` when you need to control the wording (see [Read › Row error codes](./read.md#row-error-codes-rowerrorcode) for the full list).
 
 > [!NOTE]
-> `date` の文字列は ISO 8601 のみ受理する（`YYYY-MM-DD` または `YYYY-MM-DDThh:mm[:ss[.sss]][Z|±hh:mm]`）。`YYYY/MM/DD` などは受理しない。タイムゾーン指定の無い文字列は既定でローカル時刻、`utc: true` では UTC として解釈する。
+> If a required column (`required` with no `defaultValue`) is missing from the header, every row would error on it. Rather than producing a flood of row errors, this is returned as a `missing-column` file error (`ok: false`).
+
+## Type conversion rules
+
+| `type`    | Accepted and converted                                                                                                                                                         | Errors out                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `string`  | Every cell. Numeric cells keep their original text (to avoid precision loss on large integer IDs), date cells become ISO 8601 strings, boolean cells become `'true'`/`'false'` | None                                                                        |
+| `number`  | Numeric cells, decimal-notation strings (sign, fraction, and exponent allowed; surrounding whitespace ignored)                                                                 | Strings that aren't decimal (including `0x10` etc.), boolean and date cells |
+| `boolean` | Boolean cells, `true`/`false`/`1`/`0` (case-insensitive)                                                                                                                       | Anything else                                                               |
+| `date`    | Date cells, ISO 8601 strings                                                                                                                                                   | Non-ISO-8601 strings, other types                                           |
 
 > [!NOTE]
-> 日付書式（numFmt）のセルは日付として解決されるため、`type: 'number'` 列がそのセルを受けると「数値ではありません」になる。日付は `type: 'date'` で受ける。
-> また 1900-01-01 より前の `Date` は負のシリアル値になり、Excel 上では `####` 表示になる（値自体は保持される）。
+> Date strings are accepted only in ISO 8601 (`YYYY-MM-DD` or `YYYY-MM-DDThh:mm[:ss[.sss]][Z|±hh:mm]`). Formats like `YYYY/MM/DD` are not accepted. Strings without a timezone are interpreted as local time by default, or as UTC when `utc: true`.
 
-## 型推論（InferRow）
+> [!NOTE]
+> A cell with a date format (numFmt) resolves as a date, so a `type: 'number'` column receiving that cell reports "not a number". Take dates with `type: 'date'`.
+> Also, a `Date` before 1900-01-01 becomes a negative serial value and shows as `####` in Excel (the value itself is preserved).
 
-`defineSchema(...)` で定義すると、`InferRow<S>` で行の型を引ける。`prop` がキー、`type` が値の型。`required: true` でない列は `null` 許容になる。
+## Type inference (InferRow)
+
+When defined with `defineSchema(...)`, you can derive the row type via `InferRow<S>`: `prop` is the key and `type` is the value type. Columns without `required: true` become nullable.
 
 ```ts
 const schema = defineSchema({
-  名前: { prop: "name", type: "string", required: true },
-  年齢: { prop: "age", type: "number" },
+  Name: { prop: "name", type: "string", required: true },
+  Age: { prop: "age", type: "number" },
 });
 
 type Employee = InferRow<typeof schema>;
 // { name: string; age: number | null }
 ```
 
-`parse` / `parseFile` / `build` はスキーマを渡すとこの型を使うので、普段は明示不要。
+`parse` / `parseFile` / `build` use this type when given a schema, so you usually don't need to spell it out.
 
 > [!NOTE]
-> 素の `const schema = {...} satisfies Schema` は `prop` が `string` に widen し、`InferRow` のキー再割り当てが index signature に潰れて行の型が全列の union になる。`defineSchema`（`const` 型パラメータの恒等関数）で包むとリテラルが保たれ正しく推論される。
+> A bare `const schema = {...} satisfies Schema` widens `prop` to `string`, which collapses `InferRow`'s key remapping into an index signature and makes the row type a union of all columns. Wrapping with `defineSchema` (an identity function with a `const` type parameter) preserves the literals so inference works correctly.
