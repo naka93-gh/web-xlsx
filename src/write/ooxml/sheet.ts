@@ -79,13 +79,9 @@ function rowXml(rowIndex: number, cells: Cell[], style: number, utc: boolean): s
  * sheet 生成オプション
  */
 export type SheetOptions = {
-  /**
-   * ヘッダー太字・先頭行固定・列幅自動を付ける
-   */
+  /** ヘッダー太字・先頭行固定・列幅自動を付ける */
   style: boolean
-  /**
-   * Date を UTC 固定でシリアル値にする（既定 false=ローカル壁時計）
-   */
+  /** Date を UTC 固定でシリアル値にする（既定 false=ローカル壁時計） */
   utc: boolean
 }
 

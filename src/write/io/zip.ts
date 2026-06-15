@@ -14,13 +14,9 @@ const DOS_DATE = 0x21 // (year-1980=0)<<9 | month1<<5 | day1
  * ZIP に入れる 1 エントリ
  */
 export type ZipEntry = {
-  /**
-   * アーカイブ内パス（例: "xl/worksheets/sheet1.xml"）
-   */
+  /** アーカイブ内パス（例: "xl/worksheets/sheet1.xml"） */
   name: string
-  /**
-   * 格納する生バイト列
-   */
+  /** 格納する生バイト列 */
   data: Uint8Array
 }
 

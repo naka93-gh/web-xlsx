@@ -23,23 +23,13 @@ export type BuildResult = { ok: false; error: FileError } | { ok: true; data: Ui
  * 書き出しオプション
  */
 export type BuildOptions = {
-  /**
-   * シート名（既定: "Sheet1"）
-   */
+  /** シート名（既定: "Sheet1"） */
   sheetName?: string
 
-  /**
-   * 激安スタイル（ヘッダー太字 + 先頭行固定 + 列幅自動）を付ける（既定: true）
-   *
-   * `false` で一括無効化。日付の表示書式は値の正しさに必須なので常に有効
-   */
+  /** 激安スタイル（ヘッダー太字 + 先頭行固定 + 列幅自動）を付ける（既定: true）。`false` で一括無効化。日付の表示書式は値の正しさに必須なので常に有効 */
   style?: boolean
 
-  /**
-   * Date を UTC 固定でシリアル値にする（既定: false=ローカルの壁時計）
-   *
-   * `parse` の同名オプションと対。読み書きで同じ値を使えば往復は一致する
-   */
+  /** Date を UTC 固定でシリアル値にする（既定: false=ローカルの壁時計）。`parse` の同名オプションと対。読み書きで同じ値を使えば往復は一致する */
   utc?: boolean
 }
 

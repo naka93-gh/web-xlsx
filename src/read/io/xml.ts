@@ -7,8 +7,8 @@
  * - `text` … 要素間のテキスト（実体参照はデコード済み・空白は保持）
  * - `close` … 終了タグ
  *
- * 要素名 `name` は名前空間プレフィックスを剥がした local-name。
- * 属性名（`attrs` のキー）はプレフィックス付きのまま。
+ * 要素名 `name` は名前空間プレフィックスを剥がした local-name
+ * 属性名（`attrs` のキー）はプレフィックス付きのまま
  */
 export type XmlToken =
   | { type: 'open'; name: string; attrs: Record<string, string>; selfClosing: boolean }
@@ -52,9 +52,9 @@ function isSpace(ch: string): boolean {
 /**
  * 要素名から名前空間プレフィックスを剥がし local-name を返す
  *
- * OOXML の namespace は任意プレフィックスに束縛可能（`x:sheetData` 等）。
- * 要素照合を local-name で行うため open/close 双方の name に適用する。
- * 属性名（`r:id` / `xml:space` 等）は付きで参照するため剥がさない。
+ * OOXML の namespace は任意プレフィックスに束縛可能（`x:sheetData` 等）
+ * 要素照合を local-name で行うため open/close 双方の name に適用する
+ * 属性名（`r:id` / `xml:space` 等）は付きで参照するため剥がさない
  */
 function localName(name: string): string {
   const colon = name.indexOf(':')

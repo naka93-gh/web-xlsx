@@ -43,7 +43,7 @@ export class OptionError extends Error {
  *
  * `null`（欠落セル）と `''`（空文字セル）を空とみなす。ヘッダー検出・ヘッダー構築・
  * 空行スキップで判定がズレると、空文字のみの行がヘッダーに選ばれて結果が黙って
- * 空になる等の不整合を生むため、一箇所に集約する。
+ * 空になる等の不整合を生むため、一箇所に集約する
  */
 function isBlank(value: Cell): boolean {
   return value === null || value === ''
@@ -136,7 +136,6 @@ export function readSheet(
   const range = options.range ? parseRange(options.range) : undefined
   const { present, inColRange } = collectInRange(xml, range)
 
-  // ヘッダー行を決める（指定が無ければ最初の非空行）
   // 行が非空か（範囲内の列に空でない値があるか）
   const isNonEmpty = (r: PresentRow): boolean => {
     for (const [col, raw] of r.cells) {
@@ -144,6 +143,8 @@ export function readSheet(
     }
     return false
   }
+
+  // ヘッダー行を決める（指定が無ければ最初の非空行）
   const headerRowNum = options.headerRow ?? present.find(isNonEmpty)?.rowNum
   if (headerRowNum === undefined) return { headers: [], rows: [] }
 

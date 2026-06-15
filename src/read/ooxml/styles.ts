@@ -6,9 +6,7 @@ import { tokenize } from '../io/xml.js'
  * 開いたスタイル表
  */
 export type Styles = {
-  /**
-   * セルの s 属性（cellXfs のインデックス）が日付書式を指すか
-   */
+  /** セルの s 属性（cellXfs のインデックス）が日付書式を指すか */
   isDate(styleIndex: number): boolean
 }
 

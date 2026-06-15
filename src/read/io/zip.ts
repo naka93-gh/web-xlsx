@@ -67,7 +67,7 @@ async function inflateRaw(data: Uint8Array<ArrayBuffer>, limit: number): Promise
   try {
     decompressor = new DecompressionStream('deflate-raw')
   } catch {
-    // 構築自体が失敗するのは deflate-raw 未対応（Node 20.11 以下・旧ブラウザ）。
+    // 構築自体が失敗するのは deflate-raw 未対応（Node 20.11 以下・旧ブラウザ）
     // 破損扱い(invalid-xlsx)でなく環境要因として明示する
     throw new ZipError('unsupported', 'DecompressionStream が deflate-raw に未対応の環境です')
   }
@@ -194,9 +194,9 @@ export async function openZip(
     const nameLen = view.getUint16(entry.localOffset + 26, true)
     const extraLen = view.getUint16(entry.localOffset + 28, true)
     const dataStart = entry.localOffset + 30 + nameLen + extraLen
-    // 切り出し範囲が中央ディレクトリ（= ローカルデータ領域の終端）を越えないか検査する。
+    // 切り出し範囲が中央ディレクトリ（= ローカルデータ領域の終端）を越えないか検査する
     // stored(method 0) は宣言 compressedSize が実体より大きくても deflate のように壊れず
-    // 素通りし、subarray が後続バイト（CD 等）を含んだまま返す silent corruption になりうる。
+    // 素通りし、subarray が後続バイト（CD 等）を含んだまま返す silent corruption になりうる
     if (dataStart + entry.compressedSize > cdOffset) {
       throw new ZipError('invalid', 'エントリのデータ範囲がアーカイブ境界を超えています')
     }

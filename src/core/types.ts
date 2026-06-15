@@ -44,13 +44,9 @@ export type FileErrorCode =
  * ファイルがそもそも開けない（壊れている・xlsx でない・対象シートが無い 等）場合に返る
  */
 export type FileError = {
-  /**
-   * 失敗の種別
-   */
+  /** 失敗の種別 */
   code: FileErrorCode
-  /**
-   * 人が読めるメッセージ
-   */
+  /** 人が読めるメッセージ */
   message: string
 }
 
@@ -66,32 +62,19 @@ export type ColumnType = 'string' | 'number' | 'boolean' | 'date'
  * 列定義の本体（`type` ごとに `defaultValue` の型が決まる）
  */
 type ColumnOf<T extends ColumnType, V> = {
-  /**
-   * 出力プロパティ名
-   */
+  /** 出力プロパティ名 */
   prop: string
 
-  /**
-   * 期待する型（`'string'` は生の格納文字列を読み大整数IDの桁落ちを回避）
-   */
+  /** 期待する型（`'string'` は生の格納文字列を読み大整数IDの桁落ちを回避） */
   type: T
 
-  /**
-   * 必須なら未入力でエラー
-   */
+  /** 必須なら未入力でエラー */
   required?: boolean
 
-  /**
-   * 空セル時の補完値（列の `type` に対応する型のみ）
-   *
-   * 型変換・`validate` を通さずそのまま出力行に入るため、
-   * {@link InferRow} が主張する型と実体を一致させる目的で型を限定する
-   */
+  /** 空セル時の補完値（列の `type` に対応する型のみ）。型変換・`validate` を通さずそのまま出力行に入るため、{@link InferRow} が主張する型と実体を一致させる目的で型を限定する */
   defaultValue?: V
 
-  /**
-   * 追加検証（エラーメッセージ or null を返す）
-   */
+  /** 追加検証（エラーメッセージ or null を返す） */
   validate?: (value: Cell) => string | null
 }
 

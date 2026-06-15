@@ -8,9 +8,7 @@ import type { ZipArchive } from '../io/zip.js'
  */
 export type SheetRef = {
   name: string
-  /**
-   * zip 内の実ファイルパス
-   */
+  /** zip 内の実ファイルパス */
   path: string
 }
 

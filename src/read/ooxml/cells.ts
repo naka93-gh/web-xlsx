@@ -10,21 +10,13 @@ import type { Styles } from './styles.js'
  * シート XML から取り出した未解決のセル
  */
 export type RawCell = {
-  /**
-   * t 属性（s/inlineStr/str/b/e/d/n、無印は数値）
-   */
+  /** t 属性（s/inlineStr/str/b/e/d/n、無印は数値） */
   type?: string
-  /**
-   * s 属性（cellXfs のインデックス）
-   */
+  /** s 属性（cellXfs のインデックス） */
   style?: number
-  /**
-   * <v> のテキスト（s/str/b/n で使う）
-   */
+  /** <v> のテキスト（s/str/b/n で使う） */
   value?: string
-  /**
-   * <is> を連結したテキスト（inlineStr で使う）
-   */
+  /** <is> を連結したテキスト（inlineStr で使う） */
   inlineText?: string
 }
 
@@ -35,9 +27,7 @@ export type ResolveContext = {
   sharedStrings: string[]
   styles: Styles
   date1904: boolean
-  /**
-   * 日付を UTC 固定で解釈する（既定 false=ローカル壁時計）
-   */
+  /** 日付を UTC 固定で解釈する（既定 false=ローカル壁時計） */
   utc: boolean
 }
 
