@@ -31,7 +31,6 @@ jobs:
       - run: pnpm test:dist
 
   # バンドルサイズ LIMIT（read+write 合算 gzip 15KB） としてチェック
-  # Node 版に依らないので単発実行
   size:
     runs-on: ubuntu-latest
     steps:
@@ -44,12 +43,21 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm size:check
 
-  # ブランチ保護の必須チェックを安定させるゲート。
-  # check は matrix 展開で名前が変わる（"check (22)" 等）ため必須コンテキストに
-  # 直接指定すると食い違う。必須チェックはこの gate 1 本だけを指定すれば、
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:coverage
+
   gate:
     if: always()
-    needs: [check, size]
+    needs: [check, size, coverage]
     runs-on: ubuntu-latest
     steps:
       - name: Required jobs succeeded
