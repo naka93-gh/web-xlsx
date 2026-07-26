@@ -33,7 +33,8 @@ describe('parse（低レベル E2E）', () => {
     expect(result.data[0]?.名前).toBe('Alice')
     expect(result.data[0]?.年齢).toBe(30)
     expect(result.data[0]?.入社日).toBeInstanceOf(Date)
-    expect((result.data[0]?.入社日 as Date).getFullYear()).toBe(2020)
+    const hire = result.data[0]?.入社日 as Date
+    expect(hire.getFullYear()).toBe(2020)
     expect(result.data[1]?.名前).toBe('Bob')
   })
 

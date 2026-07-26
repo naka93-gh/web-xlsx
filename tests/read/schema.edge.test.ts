@@ -74,7 +74,8 @@ describe('applySchema 型強制の分岐', () => {
   it('date: Date はそのまま受理し ISO 文字列は変換し不正文字列・非日付はエラーにする', () => {
     const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
     expect(first(s, { d: new Date(2020, 0, 1) }).value?.d).toBeInstanceOf(Date)
-    expect((first(s, { d: '2020-01-01' }).value?.d as Date).getFullYear()).toBe(2020)
+    const iso = first(s, { d: '2020-01-01' }).value?.d as Date
+    expect(iso.getFullYear()).toBe(2020)
     expect(first(s, { d: 'not-a-date' }).errors[0]?.code).toBe('non-date')
     expect(first(s, { d: 123 }).errors[0]?.code).toBe('non-date')
   })
@@ -88,7 +89,8 @@ describe('applySchema 型強制の分岐', () => {
 
   it('date: ISO 日時はそのまま受理する', () => {
     const s = { d: { prop: 'd', type: 'date' } } satisfies Schema
-    expect((first(s, { d: '2020-01-01T09:30:00' }).value?.d as Date).getHours()).toBe(9)
+    const local = first(s, { d: '2020-01-01T09:30:00' }).value?.d as Date
+    expect(local.getHours()).toBe(9)
     expect(first(s, { d: '2020-01-01T00:00:00Z' }).value?.d).toBeInstanceOf(Date)
   })
 

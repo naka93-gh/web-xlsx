@@ -35,7 +35,8 @@ describe('実ファイル / employees.xlsx（型付き取込の主軸）', () =>
 
     expect(result.data[1]?.在籍).toBe(false)
     expect(result.data[2]?.名前).toBe('John Smith')
-    expect((result.data[2]?.入社日 as Date).getFullYear()).toBe(2019)
+    const d2 = result.data[2]?.入社日 as Date
+    expect(d2.getFullYear()).toBe(2019)
   })
 
   it('header:false でヘッダー行も含め矩形の Cell[][] を返す', async () => {

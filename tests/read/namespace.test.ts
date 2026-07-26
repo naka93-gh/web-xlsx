@@ -41,7 +41,8 @@ describe('名前空間プレフィックス（local-name 照合・サイレン�
     expect(prefixed.data).toHaveLength(2)
     expect(prefixed.data[0]?.名前).toBe('Alice')
     expect(prefixed.data[0]?.年齢).toBe(30)
-    expect((prefixed.data[0]?.入社日 as Date).getFullYear()).toBe(2020)
+    const hire = prefixed.data[0]?.入社日 as Date
+    expect(hire.getFullYear()).toBe(2020)
   })
 
   it('プレフィックス付きでもスキーマ・日付・真偽が解決される（styles/strings 経路）', async () => {
