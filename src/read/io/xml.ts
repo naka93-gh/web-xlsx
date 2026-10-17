@@ -1,14 +1,8 @@
-// OOXML 用の最小 XML トークナイザ（DOMParser が Node に無いため自前で持つ）
+// DOMParser が Node に無いため XML トークナイザを自前で持つ
 
 /**
- * XML トークン
- *
- * - `open` … 開始タグ（`selfClosing` なら自己終了タグ）
- * - `text` … 要素間のテキスト（実体参照はデコード済み・空白は保持）
- * - `close` … 終了タグ
- *
- * 要素名 `name` は名前空間プレフィックスを剥がした local-name
- * 属性名（`attrs` のキー）はプレフィックス付きのまま
+ * `text` の値は実体参照をデコード済みで、空白は保持する
+ * 要素名 `name` は名前空間プレフィックスを剥がした local-name、属性名（`attrs` のキー）はプレフィックス付きのまま
  */
 export type XmlToken =
   | { type: 'open'; name: string; attrs: Record<string, string>; selfClosing: boolean }
@@ -23,17 +17,15 @@ const NAMED_ENTITIES: Record<string, string> = {
   apos: "'",
 }
 
-/**
- * 実体参照をデコードする（定義済み5種＋数値参照 `&#nnn;` / `&#xhh;`）
- */
 export function decodeEntities(s: string): string {
   if (s.indexOf('&') === -1) return s
   return s.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (whole, body: string) => {
     if (body[0] === '#') {
       const code =
         body[1] === 'x' ? Number.parseInt(body.slice(2), 16) : Number.parseInt(body.slice(1), 10)
-      // 範囲外（0x10FFFF 超で fromCodePoint が例外）と、単独サロゲート域（0xD800–0xDFFF。
-      // デコードすると不対サロゲートになり XML 1.0 違反）は変換せず元の参照のまま温存する
+      // 0x10FFFF 超は fromCodePoint が例外を投げる
+      // 0xD800–0xDFFF はデコードすると不対サロゲートになり XML 1.0 違反になる
+      // どちらも変換せず元の参照のまま温存する
       if (code < 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) return whole
       return String.fromCodePoint(code)
     }
@@ -42,16 +34,11 @@ export function decodeEntities(s: string): string {
   })
 }
 
-/**
- * 空白文字か
- */
 function isSpace(ch: string): boolean {
   return ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r'
 }
 
 /**
- * 要素名から名前空間プレフィックスを剥がし local-name を返す
- *
  * OOXML の namespace は任意プレフィックスに束縛可能（`x:sheetData` 等）
  * 要素照合を local-name で行うため open/close 双方の name に適用する
  * 属性名（`r:id` / `xml:space` 等）は付きで参照するため剥がさない
@@ -62,7 +49,7 @@ function localName(name: string): string {
 }
 
 /**
- * start 位置のタグ終端 `>` をクォートを考慮して探す（属性値内の `>` を誤検出しない）
+ * 属性値内の `>` を誤検出しないようクォートを考慮する
  */
 function findTagEnd(xml: string, start: number): number {
   let quote = ''
@@ -79,9 +66,6 @@ function findTagEnd(xml: string, start: number): number {
   return -1
 }
 
-/**
- * タグ内部文字列（`<` `>` を除いた中身）から要素名と属性を取り出す
- */
 function parseTag(inner: string): { name: string; attrs: Record<string, string> } {
   const len = inner.length
   let j = 0
@@ -99,12 +83,11 @@ function parseTag(inner: string): { name: string; attrs: Record<string, string> 
 
     while (k < len && isSpace(inner[k] as string)) k++
     if (inner[k] !== '=') {
-      // 値の無い属性（OOXML ではほぼ出ない）
       attrs[attrName] = ''
       j = k
       continue
     }
-    k++ // '=' を飛ばす
+    k++
     while (k < len && isSpace(inner[k] as string)) k++
 
     const quote = inner[k]
@@ -127,19 +110,12 @@ function parseTag(inner: string): { name: string; attrs: Record<string, string> 
   return { name, attrs }
 }
 
-/**
- * XML 文字列をトークン列に分解する
- *
- * XML 宣言・コメント・処理命令・DOCTYPE は読み飛ばす
- * CDATA はそのままテキストとして扱う
- */
 export function* tokenize(xml: string): Generator<XmlToken> {
   const n = xml.length
   let i = 0
 
   while (i < n) {
     if (xml[i] !== '<') {
-      // テキスト（次の '<' まで）
       const next = xml.indexOf('<', i)
       const end = next === -1 ? n : next
       const raw = xml.slice(i, end)
@@ -148,7 +124,6 @@ export function* tokenize(xml: string): Generator<XmlToken> {
       continue
     }
 
-    // コメント / CDATA / 処理命令 / DOCTYPE: いずれも読み飛ばす（CDATA だけ中身をテキスト化）
     if (xml.startsWith('<!--', i)) {
       const end = xml.indexOf('-->', i + 4)
       i = end === -1 ? n : end + 3
@@ -172,7 +147,6 @@ export function* tokenize(xml: string): Generator<XmlToken> {
       continue
     }
 
-    // 要素（開始 or 終了）
     const end = findTagEnd(xml, i + 1)
     if (end === -1) break
     let inner = xml.slice(i + 1, end)

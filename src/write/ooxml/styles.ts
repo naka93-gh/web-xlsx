@@ -1,21 +1,14 @@
-// styles.xml 生成（最小構成：日付 numFmt とヘッダー太字のみ）
-
 import { DECL, NS_MAIN } from './consts.js'
 
 /**
- * 日付セルに付ける cellXfs インデックス（numFmt 164 = yyyy-mm-dd）
+ * numFmt 164 = yyyy-mm-dd
  */
 export const DATE_STYLE = 1
 
-/**
- * ヘッダー行に付ける cellXfs インデックス（太字）
- */
 export const HEADER_STYLE = 2
 
 /**
- * styles.xml を返す
- *
- * cellXfs: 0=既定 / 1=日付(yyyy-mm-dd) / 2=ヘッダー太字。色・罫線は持たない
+ * cellXfs の並びを DATE_STYLE / HEADER_STYLE と一致させる（0=既定 / 1=日付 / 2=ヘッダー太字）
  */
 export function stylesXml(): string {
   return `${DECL}<styleSheet xmlns="${NS_MAIN}">\

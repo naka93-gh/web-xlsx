@@ -1,5 +1,3 @@
-// 書き出しオーケストレーション（行 → セル → XML パーツ → ZIP → bytes）
-
 import { findDuplicateProp } from '../core/schema.js'
 import type { Cell, InferRow, Row, Schema } from '../core/types.js'
 import { buildZip, type ZipEntry } from './io/zip.js'
@@ -8,9 +6,6 @@ import { stylesXml } from './ooxml/styles.js'
 import { contentTypesXml, rootRelsXml, workbookRelsXml, workbookXml } from './ooxml/workbook.js'
 import type { BuildArgs, BuildArgsWithSchema, BuildOptions, BuildResult } from './types.js'
 
-/**
- * unknown 値を Cell に寄せる（Cell 外の型は String 化、未入力は null）
- */
 function toCell(value: unknown): Cell {
   if (value === undefined || value === null) return null
   if (
@@ -26,9 +21,6 @@ function toCell(value: unknown): Cell {
   return String(value)
 }
 
-/**
- * スキーマ無し: 全行のキーを出現順に集めてヘッダーとし、セル行列を作る
- */
 function fromRows(rows: Row[]): { headers: string[]; matrix: Cell[][] } {
   const headers: string[] = []
   const seen = new Set<string>()
@@ -44,9 +36,6 @@ function fromRows(rows: Row[]): { headers: string[]; matrix: Cell[][] } {
   return { headers, matrix }
 }
 
-/**
- * スキーマ付き: スキーマのキー順をヘッダーに、prop でセル値を引く
- */
 function fromSchema(
   rows: Record<string, unknown>[],
   schema: Schema,
@@ -96,12 +85,10 @@ export async function build(
     }
   }
 
-  // ヘッダーとセル行列を組み立てる（スキーマ有無で列順の決め方が変わる）
   const style = options.style ?? true
   const utc = options.utc ?? false
   const { headers, matrix } = schema ? fromSchema(rows, schema) : fromRows(rows as Row[])
 
-  // 各 OOXML パーツを XML 化して ZIP にまとめる
   const enc = new TextEncoder()
   const part = (name: string, xml: string): ZipEntry => ({ name, data: enc.encode(xml) })
 

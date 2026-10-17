@@ -1,7 +1,5 @@
-// dist スモークテスト — バンドラを介さない Node ネイティブ ESM で公開物が動くか
-//
-// vitest は src を Vite 経由で解決するため、「dist の相対 import が Node で
-// 解決できるか」（拡張子の有無）はここでしか検知できない。`pnpm build` 後に実行する。
+// vitest は src を Vite 経由で解決するため、dist の相対 import が Node で解決できるか（拡張子の有無）はここでしか検知できない
+// `pnpm build` 後に実行する
 
 import { parse } from '../dist/index.js'
 import { build } from '../dist/write.js'

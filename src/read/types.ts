@@ -1,10 +1,5 @@
-// read 専用の公開型（取込結果・行エラー・オプション・第2引数）
-
 import type { FileError, Schema } from '../core/types.js'
 
-// ───────────────────────────────────────────
-// 行単位エラー
-// ───────────────────────────────────────────
 /**
  * 行単位エラーの種別（`message` の文言に依らずプログラムで分岐・多言語化するためのコード）
  *
@@ -21,7 +16,7 @@ export type RowErrorCode = 'required' | 'non-number' | 'non-boolean' | 'non-date
  * {@link ParseResult} の `errors` に積まれる
  */
 export type RowError = {
-  /** 失敗の種別（{@link RowErrorCode}）。`message` に依らない分岐・多言語化に使う */
+  /** 失敗の種別（{@link RowErrorCode}）で、`message` に依らない分岐・多言語化に使う */
   code: RowErrorCode
 
   /**
@@ -45,9 +40,6 @@ export type RowError = {
   message: string
 }
 
-// ───────────────────────────────────────────
-// 結果
-// ───────────────────────────────────────────
 /**
  * パース結果 — file 単位の失敗と行単位のエラーを分離して返す
  *
@@ -70,9 +62,6 @@ export type ParseResult<T> =
   | { ok: false; error: FileError }
   | { ok: true; data: T[]; errors: RowError[] }
 
-// ───────────────────────────────────────────
-// オプション
-// ───────────────────────────────────────────
 /**
  * ZIP 解凍サイズの上限設定（ZIP 爆弾対策）
  *
@@ -120,16 +109,16 @@ export type ParseOptions = {
   /**
    * `false` でヘッダーを解決せず `Cell[][]`（配列 of 配列）を返す
    *
-   * 各行は列A(index 0)からシートの最大使用列まで（欠落セルは `null`）で矩形化される。
-   * `schema` とは併用不可（型で排他）。`headerRow` は無視される
+   * 各行は列A(index 0)からシートの最大使用列まで（欠落セルは `null`）で矩形化される
+   * `schema` とは併用不可（型で排他）で、`headerRow` は無視される
    */
   header?: false
 
   /**
    * 日付を UTC 固定で解釈する（既定: false=ローカルの壁時計）
    *
-   * `false` だと返る `Date` はローカル 0:00 で組まれ、`getFullYear()` 等で暦日を読む。
-   * `true` だと UTC 0:00 で組まれ `getUTCFullYear()` / `toISOString()` が暦日になる。
+   * `false` だと返る `Date` はローカル 0:00 で組まれ、`getFullYear()` 等で暦日を読む
+   * `true` だと UTC 0:00 で組まれ `getUTCFullYear()` / `toISOString()` が暦日になる
    * 書き出し（`build`）と読み取りで同じ値を使えば往復は一致する
    */
   utc?: boolean
@@ -142,14 +131,11 @@ export type ParseOptions = {
   limits?: ZipLimits
 }
 
-// ───────────────────────────────────────────
-// 第2引数（schema / options）
-// ───────────────────────────────────────────
 /**
  * parse / parseFile の第2引数
  *
- * 型付け・検証の `schema` と、取り込み調整の `options`（{@link ParseOptions}）を
- * 別キーに分けて渡す。どちらも省略できる
+ * 型付け・検証の `schema` と、取り込み調整の `options`（{@link ParseOptions}）を別キーに分けて渡す
+ * どちらも省略できる
  */
 export type ParseArgs = {
   schema?: never

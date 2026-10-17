@@ -1,13 +1,9 @@
-// CRC-32（IEEE 802.3, ZIP 用）。Web 標準 API に無いため自前実装する
+// CRC-32（IEEE 802.3, ZIP 用）は Web 標準 API に無いため自前実装する
 
-/**
- * CRC-32 ルックアップテーブル（多項式 0xEDB88320、初回のみ生成）
- */
 let table: Uint32Array | null = null
 
 function getTable(): Uint32Array {
   if (table) return table
-  // 各バイト値 0..255 を多項式で 8 ビット分畳んでテーブル化する
   const t = new Uint32Array(256)
   for (let n = 0; n < 256; n++) {
     let c = n
@@ -20,9 +16,6 @@ function getTable(): Uint32Array {
   return t
 }
 
-/**
- * バイト列の CRC-32 を返す（符号なし 32bit）
- */
 export function crc32(data: Uint8Array): number {
   const t = getTable()
   let crc = 0xffffffff

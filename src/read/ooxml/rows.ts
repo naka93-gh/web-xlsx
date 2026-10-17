@@ -1,39 +1,28 @@
-// sheetData（xl/worksheets/sheetN.xml）を SAX 風に走査し、存在する行を取り出す
-
 import { tokenize } from '../io/xml.js'
 import { parseRef, type RawCell } from './cells.js'
 
-/**
- * シート上に存在した行（列インデックス → raw セル）
- */
 export type PresentRow = { rowNum: number; cells: Map<number, RawCell> }
 
 /**
- * sheetData をトークン走査し、存在する行を列インデックス付きで取り出す
- *
- * SAX 風の状態機械。タグの open/text/close を 1 パスで処理し、入れ子の現在位置を
- * 下のフラグ群で覚えておく（DOM を作らないのでメモリは行 1 つ分で済む）
+ * DOM を作らないのでメモリは行 1 つ分で済む
  */
 export function collectRows(xml: string): PresentRow[] {
   const rows: PresentRow[] = []
 
-  // sheetData スコープ内か（外側の要素はすべて無視する）
   let inSheetData = false
 
-  // 現在組み立て中の <row>。lastRowNum/nextCol は r 属性欠落時の連番フォールバック用
+  // lastRowNum/nextCol は r 属性欠落時の連番フォールバック用
   let row: PresentRow | null = null
   let lastRowNum = 0
   let nextCol = 0
 
-  // 現在組み立て中の <c> とその列インデックス
   let cell: RawCell | null = null
   let cellCol = 0
 
-  // <v>（通常値）の収集状態
   let inV = false
   let valueBuf = ''
 
-  // <is>（インライン文字列）の収集状態。phonetic>0 の <rPh>（ふりがな）配下は本文から除外する
+  // <rPh>（ふりがな）配下は本文から除外する
   let inIs = false
   let inT = false
   let phonetic = 0
@@ -75,7 +64,7 @@ export function collectRows(xml: string): PresentRow[] {
           cell = null
         }
       } else if (token.name === 'v') {
-        // 自己終了 <v/> は値が無い。フラグを立てると後続セルのテキストを誤って吸う
+        // 自己終了 <v/> でフラグを立てると後続セルのテキストを誤って吸う
         if (!token.selfClosing) {
           inV = true
           valueBuf = ''
@@ -94,7 +83,6 @@ export function collectRows(xml: string): PresentRow[] {
       if (inV) valueBuf += token.value
       else if (inIs && inT && phonetic === 0) inlineBuf += token.value
     } else {
-      // close
       if (token.name === 'v') {
         inV = false
         if (cell) cell.value = valueBuf

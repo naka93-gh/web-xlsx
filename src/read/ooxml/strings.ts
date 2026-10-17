@@ -1,20 +1,15 @@
-// 共有文字列テーブル（xl/sharedStrings.xml）の解析
-
 import { tokenize } from '../io/xml.js'
 
 /**
- * sharedStrings.xml を index → 文字列の配列に変換する
- *
- * 各 `<si>` が 1 件。`<r>` ラン（リッチテキスト）は連結し、
  * `<rPh>`（ふりがな）内のテキストは除外する
- * 返す配列の index はセルの共有文字列参照（`t="s"` の `<v>`）と一致する
+ * 返す配列の index はセルの共有文字列参照（`t="s"` の `<v>`）と一致させる
  */
 export function parseSharedStrings(xml: string): string[] {
   const result: string[] = []
 
-  let current: string | null = null // 現在の <si> の蓄積（範囲外は null）
-  let inText = false // <t> の内側か
-  let skip = 0 // <rPh> の内側（>0 で除外）
+  let current: string | null = null
+  let inText = false
+  let skip = 0
 
   for (const token of tokenize(xml)) {
     if (token.type === 'open') {

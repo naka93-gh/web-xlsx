@@ -1,10 +1,5 @@
-// web-xlsx の読み書き共有の公開型（値・行・スキーマ・file 単位エラー）
-//
 // read 専用型は read/types.ts、write 専用型は write/types.ts に置く
 
-// ───────────────────────────────────────────
-// 値・行
-// ───────────────────────────────────────────
 /**
  * セルのネイティブ値
  *
@@ -20,9 +15,6 @@ export type Cell = string | number | boolean | Date | null
  */
 export type Row = Record<string, Cell>
 
-// ───────────────────────────────────────────
-// エラー（file 単位 / 行単位）
-// ───────────────────────────────────────────
 /**
  * file 単位で読み取りに失敗した理由
  */
@@ -50,9 +42,6 @@ export type FileError = {
   message: string
 }
 
-// ───────────────────────────────────────────
-// スキーマ（列定義と行型の推論）
-// ───────────────────────────────────────────
 /**
  * スキーマの列型（`'string'` は生の格納文字列を読む）
  */
@@ -71,7 +60,11 @@ type ColumnOf<T extends ColumnType, V> = {
   /** 必須なら未入力でエラー */
   required?: boolean
 
-  /** 空セル時の補完値（列の `type` に対応する型のみ）。型変換・`validate` を通さずそのまま出力行に入るため、{@link InferRow} が主張する型と実体を一致させる目的で型を限定する */
+  /**
+   * 空セル時の補完値（列の `type` に対応する型のみ）
+   *
+   * 型変換・`validate` を通さずそのまま出力行に入るので、{@link InferRow} が主張する型と実体を一致させるために型を限定する
+   */
   defaultValue?: V
 
   /** 追加検証（エラーメッセージ or null を返す） */
@@ -82,7 +75,7 @@ type ColumnOf<T extends ColumnType, V> = {
  * スキーマの 1 列定義
  *
  * `defaultValue` は `type` に対応する TS 型に限定される
- * （例: `type: 'date'` なら `Date`。文字列を渡すとコンパイルエラー）
+ * （例: `type: 'date'` なら `Date` で、文字列を渡すとコンパイルエラー）
  */
 export type Column =
   | ColumnOf<'string', string>
@@ -105,9 +98,6 @@ export type Column =
  */
 export type Schema = Record<string, Column>
 
-/**
- * ColumnType → TS 型
- */
 type CellTypeOf<C extends Column> = C['type'] extends 'string'
   ? string
   : C['type'] extends 'number'
@@ -118,9 +108,6 @@ type CellTypeOf<C extends Column> = C['type'] extends 'string'
         ? Date
         : never
 
-/**
- * required でなければ null 許容
- */
 type PropValue<C extends Column> = C extends { required: true }
   ? CellTypeOf<C>
   : CellTypeOf<C> | null

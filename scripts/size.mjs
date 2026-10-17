@@ -1,21 +1,15 @@
-// バンドルサイズゲート（read + write 合算 gzip が上限内かを検査）
-//
-// gzip 15KB 超過で exit 1（運用 MAX 15KB / 絶対上限 20KB のうち、ゲートは MAX で張る）
-// 依存は esbuild（既存 devDep）と node:zlib のみ。`pnpm size:check` / CI で共用する
-
 import { gzipSync } from 'node:zlib'
 import { build } from 'esbuild'
 
-/** 合算 gzip の LIMIT（バイト）。運用 MAX 15KB / 絶対上限 20KB のうち、ゲートは MAX で張る */
+/** 運用 MAX 15KB / 絶対上限 20KB のうち、ゲートは MAX で張る */
 const LIMIT = 15 * 1024
 
-/** 計測対象エントリ（公開する import 単位） */
 const ENTRIES = [
   { label: 'read  (web-xlsx)', entry: 'src/index.ts' },
   { label: 'write (web-xlsx/write)', entry: 'src/write.ts' },
 ]
 
-/** 1 エントリを本番と同じ設定でバンドルし min / gzip を返す */
+/** 設定は package.json の build:min と揃える */
 async function measure(entry) {
   const result = await build({
     entryPoints: [entry],

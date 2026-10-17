@@ -1,14 +1,9 @@
-// セル値の解決（raw セル → Cell）と A1 参照ユーティリティ
-
 import { columnToIndex, MAX_COL_INDEX } from '../../core/a1.js'
 import { parseIsoDate } from '../../core/date.js'
 import { serialToDate } from '../../core/serial.js'
 import type { Cell } from '../../core/types.js'
 import type { Styles } from './styles.js'
 
-/**
- * シート XML から取り出した未解決のセル
- */
 export type RawCell = {
   /** t 属性（s/inlineStr/str/b/e/d/n、無印は数値） */
   type?: string
@@ -20,21 +15,15 @@ export type RawCell = {
   inlineText?: string
 }
 
-/**
- * セル解決に必要な文脈
- */
 export type ResolveContext = {
   sharedStrings: string[]
   styles: Styles
   date1904: boolean
-  /** 日付を UTC 固定で解釈する（既定 false=ローカル壁時計） */
   utc: boolean
 }
 
 /**
- * raw セルをネイティブ値（{@link Cell}）に解決する
- *
- * 数式セルはキャッシュ値（`<v>`）を読む。エラーセルは null
+ * 数式は評価せずキャッシュ値（`<v>`）を読む
  */
 export function resolveCell(cell: RawCell, ctx: ResolveContext): Cell {
   switch (cell.type) {
@@ -52,10 +41,9 @@ export function resolveCell(cell: RawCell, ctx: ResolveContext): Cell {
     case 'e':
       return null
     case 'd':
-      // strict OOXML の ISO 日付文字列。不正形式は null
+      // t="d" は strict OOXML の ISO 日付文字列
       return cell.value ? parseIsoDate(cell.value, ctx.utc) : null
     default: {
-      // 数値（t='n' または無印）
       if (cell.value === undefined || cell.value === '') return null
       const num = Number(cell.value)
       if (!Number.isFinite(num)) return null
@@ -67,14 +55,11 @@ export function resolveCell(cell: RawCell, ctx: ResolveContext): Cell {
   }
 }
 
-/**
- * セル参照 "B12" を列(0始まり)・行(1始まり)に分解する。解析できなければ null
- */
 export function parseRef(ref: string): { col: number; row: number } | null {
   const m = /^([A-Za-z]+)(\d+)$/.exec(ref)
   if (!m) return null
   const col = columnToIndex(m[1] as string)
-  // XFD 超は正規の xlsx に無い壊れた参照。許すと矩形化で巨大配列を確保させられる
+  // XFD 超は正規の xlsx に無い壊れた参照で、許すと矩形化で巨大配列を確保させられる
   if (col > MAX_COL_INDEX) return null
   return { col, row: Number.parseInt(m[2] as string, 10) }
 }
